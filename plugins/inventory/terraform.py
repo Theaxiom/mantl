@@ -13,7 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""\
+"""
 Dynamic inventory for Terraform - finds all `.tfstate` files below the working
 directory and generates an inventory based on them.
 """
@@ -399,6 +399,7 @@ def aws_host(resource, module_name):
         # generic
         'public_ipv4': raw_attrs['public_ip'],
         'private_ipv4': raw_attrs['private_ip'],
+        'instance_state': raw_attrs['instance_state'],
         'provider': 'aws',
     }
 
