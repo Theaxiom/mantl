@@ -1,0 +1,9 @@
+  allow-alt-dns-names-for-certs-in-security-setup              1148db0 merge master
+  feature/certificates-role                                    e708bf4 Add nginx config dirs to marathon role
+  kbroughton/c12ecustom                                        aceed12 add to customize
+  kbroughton/feature/external-wildcard-tls-certs               30fb2f0 fix template
+  kbroughton/feature/issue_1238_reboot_fails_add_elastic_ips   d292225 [ahead 9, behind 1] default always eips
+  kbroughton/feature/kong-role                                 2852aaa remove defaults
+  kbroughton/feature/sleep_control                             3b600e9 not super well tested changes
+  kbroughton/feature/terraforming                              847ec33 bugfix tfstate check
+  kbroughton/feature/traefik-ssl                               b44f204 merge wildcards
