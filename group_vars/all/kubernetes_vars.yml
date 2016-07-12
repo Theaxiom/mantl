@@ -46,7 +46,7 @@ kube_master_port: 6443
 # internal network (optional). When used, it will assign IP
 # addresses from this range to individual pods.
 # This network must be unused in your network infrastructure!
-overlay_network_subnet: 10.10.0.0
+overlay_network_subnet: 10.9.0.0
 
 # internal network total size (optional). This is the prefix of the
 # entire overlay network.  So the entirety of 4.0.0.0/16 must be

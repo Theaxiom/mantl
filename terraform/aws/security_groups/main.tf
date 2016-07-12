@@ -10,44 +10,57 @@ resource "aws_security_group" "control" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # Mesos
     from_port = 5050
     to_port = 5050
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # Marathon
     from_port = 8080
     to_port = 8080
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # Chronos
     from_port = 4400
     to_port = 4400
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # Consul
     from_port = 8500
     to_port = 8500
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # ICMP
     from_port = -1
     to_port = -1
     protocol = "icmp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
+  ingress { # self
+    from_port = 0
+    to_port = 65535
+    protocol = "tcp"
+    self = true
+  }
+
+  ingress {
+    from_port = 0
+    to_port = 65535
+    protocol = "tcp"
+    security_groups = ["${aws_security_group.worker.id}","${aws_security_group.edge.id}","${aws_security_group.ui.id}"] 
+  }
 }
 
 resource "aws_security_group" "ui" {
@@ -86,7 +99,7 @@ resource "aws_security_group" "edge" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # HTTP
@@ -113,7 +126,7 @@ resource "aws_security_group" "worker" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
   ingress { # HTTP
@@ -157,6 +170,21 @@ resource "aws_security_group" "worker" {
     protocol = "icmp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  ingress { # office
+    from_port = 0
+    to_port = 65535
+    protocol = "tcp"
+    cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
+  }
+
+  ingress { # fixme after regenerating; using var names causes circular dependency error
+    from_port = 0
+    to_port = 65535
+    protocol = "tcp"
+    security_groups = ["sg-1f23aa79","sg-3123aa57"]
+  }
+
 }
 
 output "edge_security_group" {

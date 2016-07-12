@@ -3,15 +3,15 @@ variable "availability_zones"  {
 }
 variable "cidr_blocks" {
   default = {
-    az0 = "10.1.1.0/24"
-    az1 = "10.1.2.0/24"
-    az2 = "10.1.3.0/24"
+    az0 = "10.8.1.0/24"
+    az1 = "10.8.2.0/24"
+    az2 = "10.8.3.0/24"
   }
 }
 variable "datacenter" {default = "aws"}
 variable "long_name" {default = "mantl"}
 variable "short_name" {default = "mantl"}
-variable "vpc_cidr" {default = "10.1.0.0/21"}
+variable "vpc_cidr" {default = "10.8.0.0/21"}
 variable "region" {}
 
 
