@@ -2,7 +2,6 @@ variable "availability_zone" {}
 variable "control_count" {default = "3"}
 variable "count_format" {default = "%02d"}
 variable "worker_count_format" {default = "%03d"}
-variable "control_iam_profile" {default = "" }
 variable "control_type" {default = "m3.medium"}
 variable "control_volume_size" {default = "20"} # size is in gigabytes
 variable "control_data_volume_size" {default = "20"} # size is in gigabytes
@@ -22,9 +21,12 @@ variable "ssh_key" {default = "~/.ssh/id_rsa.pub"}
 variable "ssh_username"  {default = "centos"}
 variable "worker_count" {default = "1"}
 variable "kubeworker_count" {default = "0"}
-variable "worker_iam_profile" {default = "" }
 variable "worker_type" {default = "m3.medium"}
 variable "worker_volume_size" {default = "20"} # size is in gigabytes
+
+module "iam-profiles" {
+  source = "./iam"
+}
 
 resource "aws_vpc" "main" {
   cidr_block = "${var.network_ipv4}"
@@ -94,7 +96,7 @@ resource "aws_instance" "mi-control-nodes" {
 
   subnet_id = "${aws_subnet.main.id}"
 
-  iam_instance_profile = "${var.control_iam_profile}"
+  iam_instance_profile = "${module.iam-profiles.control_iam_instance_profile}"
 
   root_block_device {
     delete_on_termination = true
@@ -144,7 +146,7 @@ resource "aws_instance" "mi-worker-nodes" {
 
   subnet_id = "${aws_subnet.main.id}"
 
-  iam_instance_profile = "${var.worker_iam_profile}"
+  iam_instance_profile = "${module.iam-profiles.worker_iam_instance_profile}"
 
   root_block_device {
     delete_on_termination = true
@@ -194,7 +196,7 @@ resource "aws_instance" "mi-kubeworker-nodes" {
 
   subnet_id = "${aws_subnet.main.id}"
 
-  iam_instance_profile = "${var.worker_iam_profile}"
+  iam_instance_profile = "${module.iam-profiles.worker_iam_instance_profile}"
 
   root_block_device {
     delete_on_termination = true
