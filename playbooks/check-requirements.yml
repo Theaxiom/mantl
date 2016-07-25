@@ -10,8 +10,6 @@
           directory and re-run this playbook with the `--extra-vars`/`-e` option
           pointing to your `security.yml` (e.g., `-e @security.yml`)
 
-<<<<<<< HEAD
-=======
     # Change concurrently with the required ansible version in requirements.txt
     - name: check for compatible Ansible version
       when: >
@@ -22,7 +20,6 @@
           Your version of Ansible doesn't match the required version. Please
           install ansible-playbook with `pip install -r requirements.txt`.
 
->>>>>>> db7e6be193606bb65140f96860ffb8890da6c5e3
 - hosts: all
   gather_facts: yes
   tasks:
