@@ -178,12 +178,12 @@ resource "aws_security_group" "worker" {
     cidr_blocks = ["12.20.175.2/32","172.16.0.0/24"]
   }
 
-  ingress { # fixme after regenerating; using var names causes circular dependency error
-    from_port = 0
-    to_port = 65535
-    protocol = "tcp"
-    security_groups = ["sg-1f23aa79","sg-3123aa57"]
-  }
+#  ingress { # fixme after regenerating; using var names causes circular dependency error
+#    from_port = 0
+#    to_port = 65535
+#    protocol = "tcp"
+#    security_groups = ["sg-1f23aa79","sg-3123aa57"]
+#  }
 
 }
 
