@@ -1,0 +1,83 @@
+---
+
+sumologic_force_restart: "no"
+# For RedHat only
+sumocollector_installer_rpm: "https://collectors.sumologic.com/rest/download/rpm/64"
+sumologic_installer_rpm_local_folder: "/tmp"
+
+# For Debian apt installation only
+sumologic_installer_remote_file: "/tmp/sumocollector.deb"
+sumocollector_installer_download: "{{ sumo_installer_rpm }}"
+
+# Credentials (Login to Sumo.  Username -> Preferences -> Create Access Key)
+sumologic_collector_accessid: "{{ lookup('env', 'SUMO_COLLECTOR_ACCESS_ID') }}"
+sumologic_collector_accesskey: "{{ lookup('env', 'SUMO_COLLECTOR_ACCESS_KEY') }}"
+
+# Allow overwrite of old collectors. See:
+#   https://service.sumologic.com/help/Default.htm#Using_Clobber.htm
+sumologic_collector_clobber: ""
+
+sumologic_collector_source_template: "collector.json.j2"
+sumologic_collector_timezone: "UTC"
+sumologic_collector_force_timezone: "false"
+sumologic_collector_log_paths:
+  common:
+    - name: "Sys Log"
+      path: "/var/log/messages"
+      use_multiline: true
+      category: "OS/Linux/Syslog"
+      filters: [
+        {
+          filterType: "Exclude",
+          name: kubernetes,
+          regexp: .*kube.*
+        },
+        {
+          "filterType": "Exclude",
+          "name": "RPC request for DC",
+          "regexp": ".*RPC\\srequest\\sfor\\DC.*"
+        },
+        {
+          "filterType": "Exclude",
+          "name": "etcd",
+          "regexp": ".*etcd.*"
+        }
+      ]
+    - name: "docker stats"
+      category: "docker"
+      multilineProcessingEnabled: true
+      uri: "unix:///var/run/docker.sock"
+      specifiedContainers: []
+      allContainers: true
+      certPath: ""
+      sourceType: "DockerStats"
+      alive: true
+# filter exclude rules https://help.sumologic.com/Manage/Collectors_and_Sources/Processing_Rules/Include_and_Exclude_Rules
+    - name: "Access Log"
+      path: "/var/log/audit/*"
+      use_multiline: false
+      category: "OS/Linux/Access"
+    - name: "Security Log"
+      path: "/var/log/secure*"
+      use_multiline: false
+      category: "OS/Linux/Secure"
+    - name: "SAR sysstat"
+      sourceType: LocalFile
+      path: /var/log/sa/*
+      use_multiLine: false
+      category: Perf
+  edge:
+    - name: "Traefik logs"
+      path: "/var/log/traefik/*.log*"
+      use_multiline: false
+      category: "Infra/traefik"
+  worker:
+    - name: "mesos"
+      path: "/var/log/mesos/*.log*"
+      use_multiline: false
+      category: "Infra/Mesos/agent"
+  control:
+    - name: "mesos"
+      path: "/var/log/mesos/*.log*"
+      use_multiline: false
+      category: "Infra/Mesos/agent"

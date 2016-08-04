@@ -1,0 +1,4 @@
+linux_performance.json
+
+ /usr/bin/sadf -T -p -s $(/bin/date -d "-4 minute" +%T) -- 1 1 -A | /usr/bin/awk '{print $3":"$4 " ### " $5 " " $6 " " $7}'
+ 

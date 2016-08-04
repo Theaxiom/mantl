@@ -1,0 +1,8 @@
+---
+
+
+- name: 'Restart SumoCollector'
+  service:
+    name: collector
+    state: restarted
+  tags: [sumologic, sumologic-collector]

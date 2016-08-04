@@ -1,0 +1,14 @@
+# linux_performance.yml
+
+# https://help.sumologic.com/Apps/Linux_Performance_App/Collect_Logs_for_the_Linux_Performance_App
+# http://sebastien.godard.pagesperso-orange.fr/man_sadf.html
+- name: install sysstat
+  yum:
+    name: sysstat
+  tags: sumologic
+
+- name: template cron for sysstat
+  template:
+    src: etc_cron.d_sysstat
+    dest: /etc/cron.d/sysstat
+  tags: sumologic
