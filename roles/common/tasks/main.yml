@@ -94,15 +94,6 @@
     enabled: yes
     state: started
 
-- name: disable firewalld
-  sudo: yes
-  service:
-    name: firewalld
-    enabled: false
-    state: stopped
-  register: command_result
-  failed_when: "command_result|failed and 'No such file or directory' not in command_result.msg"
-
 - name: install pip
   sudo: yes
   yum:
