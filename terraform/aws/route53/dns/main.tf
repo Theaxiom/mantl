@@ -18,7 +18,7 @@ resource "aws_route53_record" "dns-control" {
   count = "${var.control_count}"
   zone_id = "${var.hosted_zone_id}"
   records = ["${element(split(",", var.control_ips), count.index)}"]
-  name = "${var.short_name}-control-${format("%02d", count.index+1)}.node.${var.domain}"
+  name = "control-${format("%02d", count.index+1)}"
   type = "A"
   ttl = 60
 }
@@ -27,7 +27,7 @@ resource "aws_route53_record" "dns-edge" {
   count = "${var.edge_count}"
   zone_id = "${var.hosted_zone_id}"
   records = ["${element(split(",", var.edge_ips), count.index)}"]
-  name = "${var.short_name}-edge-${format("%02d", count.index+1)}.node.${var.domain}"
+  name = "edge-${format("%02d", count.index+1)}"
   type = "A"
   ttl = 60
 }
@@ -35,7 +35,7 @@ resource "aws_route53_record" "dns-edge" {
 resource "aws_route53_record" "dns-worker" {
   count = "${var.worker_count}"
   zone_id = "${var.hosted_zone_id}"
-  name = "${var.short_name}-worker-${format("%03d", count.index+1)}.node.${var.domain}"
+  name = "worker-${format("%03d", count.index+1)}"
   records = ["${element(split(",", var.worker_ips), count.index)}"]
   type = "A"
   ttl = 60
@@ -44,7 +44,7 @@ resource "aws_route53_record" "dns-worker" {
 resource "aws_route53_record" "dns-kubeworker" {
   count = "${var.kubeworker_count}"
   zone_id = "${var.hosted_zone_id}"
-  name = "${var.short_name}-kubeworker-${format("%03d", count.index+1)}.node.${var.domain}"
+  name = "kubeworker-${format("%03d", count.index+1)}"
   records = ["${element(split(",", var.kubeworker_ips), count.index)}"]
   type = "A"
   ttl = 60
