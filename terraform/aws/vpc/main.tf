@@ -2,11 +2,7 @@ variable "availability_zones"  {
   default = "a,b,c"
 }
 variable "cidr_blocks" {
-  default = {
-    az0 = "10.1.1.0/24"
-    az1 = "10.1.2.0/24"
-    az2 = "10.1.3.0/24"
-  }
+  default = "10.1.1.0/24,10.1.2.0/24,10.1.3.0/24"
 }
 variable "datacenter" {default = "aws"}
 variable "long_name" {default = "mantl"}
@@ -28,7 +24,7 @@ resource "aws_vpc" "main" {
 resource "aws_subnet" "main" {
   vpc_id = "${aws_vpc.main.id}"
   count = "${length(split(",", var.availability_zones))}"
-  cidr_block = "${lookup(var.cidr_blocks, concat("az", count.index))}"
+  cidr_block = "${element(split(",", var.cidr_blocks), count.index)}"
   availability_zone = "${var.region}${element(split(",", var.availability_zones), count.index)}"
   tags {
     Name = "${var.long_name}"
