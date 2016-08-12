@@ -59,6 +59,13 @@ resource "aws_security_group" "control" {
     protocol = "tcp"
     self = true
   }
+
+  ingress {
+    from_port = 0
+    to_port = 65535
+    protocol = "tcp"
+    security_groups = ["${aws_security_group.worker.id}","${aws_security_group.edge.id}","${aws_security_group.ui.id}"]
+  }
 }
 
 resource "aws_security_group" "ui" {
