@@ -1,14 +1,14 @@
 # input variables
-variable control_count {}
+variable control_count { default = 3}
 variable control_ips {}
 variable control_subdomain { default = "control" }
 variable domain {}
-variable edge_count {}
+variable edge_count { default = 2}
 variable edge_ips {}
 variable hosted_zone_id {}
 variable short_name {}
 variable subdomain { default = "" }
-variable worker_count {}
+variable worker_count { default = 4}
 variable worker_ips {}
 variable kubeworker_count { default = "0" }
 variable kubeworker_ips { default = "" }
