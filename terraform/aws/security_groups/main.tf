@@ -188,10 +188,10 @@ resource "aws_security_group" "worker" {
     cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
   }
 
-  ingress { # ICMP
-    from_port = -1
-    to_port = -1
-    protocol = "icmp"
+  ingress { #all from office 
+    from_port = 0
+    to_port = 65535
+    protocol = "all"
     cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
   }
 

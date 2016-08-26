@@ -4,7 +4,7 @@ require "yaml"
 
 config_hash = {
   "worker_count" => 1,
-  "kubeworker_count" => 1,
+  "kubeworker_count" => 0,
   "control_count" => 1,
   "edge_count" => 1,
   "kubeworker_ip_start" => "192.168.100.15",
