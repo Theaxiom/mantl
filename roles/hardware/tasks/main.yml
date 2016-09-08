@@ -1,0 +1,5 @@
+# main.yml
+
+- include: increase_swap.yml
+  when: inventory_hostname in groups['role=worker']
+

@@ -1,0 +1,48 @@
+---
+
+# increase_swap.yml
+
+- name: ensure swap dir exists
+  file:
+    dest: "{{ swap_dir }}"
+    state: directory
+  tags:
+    - swap
+
+- name: truncate /var/swap/8192MiB.swap --size 0
+  shell: truncate /var/swap/8192MiB.swap --size 0
+  tags:
+    - swap
+  
+- name: allocate swap mount
+  shell: fallocate -l {{hardware_swap_size_in_mb}}m "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MB.swap"
+  tags:
+    - swap
+
+- name: set permissions on swap 
+  file: mode=0600 dest="{{ swap_dir }}/{{hardware_swap_size_in_mb}}MiB.swap"
+  tags:
+    - swap
+
+- name: set disk props 
+  shell: creates="{{ swap_dir }}/{{hardware_swap_size_in_mb}}MiB.marker" dd if=/dev/zero of="{{ swap_dir }}/{{hardware_swap_size_in_mb}}MiB.swap" bs=1M count="{{ hardware_swap_size_in_mb }}"
+  tags:
+    - swap
+
+
+- name: make swap mount
+  shell: mkswap "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MiB.swap"
+  tags:
+    - swap
+
+- name: turn on swapping
+  shell: swapon "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MiB.swap"
+  tags:
+    - swap
+    
+- name: make swap persistent
+  lineinfile:
+    line: "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MiB.swap  swap  swap  defaults  0 0"
+    dest: /etc/fstab
+  tags:
+    - swap
