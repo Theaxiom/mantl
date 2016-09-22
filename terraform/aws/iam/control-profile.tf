@@ -1,5 +1,3 @@
-variable "short_name" {default = "mantl"}
-
 resource "aws_iam_instance_profile" "control_profile" {
   name = "${var.short_name}-control-profile"
   roles = ["${aws_iam_role.control_role.name}"]
