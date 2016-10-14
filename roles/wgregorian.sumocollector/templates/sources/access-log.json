@@ -1,0 +1,9 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "Access-Log",
+      "sourceType": "LocalFile",
+      "pathExpression": "/var/log/audit/*",
+      "category": "{{ deployment_id }}/os/access"
+     }
+} 

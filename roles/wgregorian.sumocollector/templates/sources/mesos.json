@@ -1,0 +1,15 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "Mesos",
+      "sourceType": "LocalFile",
+      "automaticDateParsing": true,
+      "multilineProcessingEnabled": "False",
+      "useAutolineMatching": true,
+      "forceTimeZone": false,
+      "timeZone": "UTC",
+      "pathExpression": "/var/log/mesos/*.log*",
+      "blacklist": ["/var/log/mesos/*.gz*"],
+      "category": "{{ deployment_id }}/infra/mesos"
+    }
+}

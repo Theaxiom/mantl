@@ -1,0 +1,101 @@
+{
+  "api.version": "v1",
+  "sources": [{
+      "name": "Docker-Logs",
+      "allContainers": true,
+      "collectEvents": true,
+      "uri": "unix:///var/run/docker.sock",
+      "multilineProcessingEnabled": false,
+      "sourceType": "DockerLog",
+      "category": "pihc/infra/docker"
+  }, {
+      "name": "Docker-Stats",
+      "alive": true,
+      "allContainers": true,
+      "certPath": "",
+      "filters": [{
+    "filterType": "Include",
+    "name": "StatsRateLimiter",
+    "regexp": "\\{\\\"read\\\"\\s:\\s\\\"\\d{4}-\\d{2}-\\w{5}:\\d{2}:[0][0|1|2].*"
+      }],
+      "multilineProcessingEnabled": true,
+      "sourceType": "DockerStats",
+      "uri": "unix:///var/run/docker.sock",
+      "category": "pihc/infra/docker"
+  }, {
+      "name": "Mesos",
+      "sourceType": "LocalFile",
+      "automaticDateParsing": true,
+      "multilineProcessingEnabled": "False",
+      "useAutolineMatching": true,
+      "forceTimeZone": false,
+      "timeZone": "UTC",
+      "pathExpression": "/var/log/mesos/*.log*",
+      "category": "pihc/infra/mesos"
+  }, {
+      "name": "Access-Log",
+      "sourceType": "LocalFile",
+      "pathExpression": "/var/log/audit/*",
+      "category": "pihc/os/access"
+  }, {
+      "name": "Security-Log",
+      "sourceType": "LocalFile",
+      "pathExpression": "/var/log/secure*",
+      "category": "pihc/os/secure"
+  }, {
+      "name": "Syslog-messages",
+      "filters": [{
+    "filterType": "Exclude",
+    "name": "kubernetes",
+    "regexp": ".*kube.*"
+      }, {
+    "filterType": "Exclude",
+    "name": "RPC request for DC",
+    "regexp": ".*RPC\\srequest\\sfor\\DC.*"
+      }, {
+    "filterType": "Exclude",
+    "name": "etcd",
+    "regexp": ".*etcd.*"
+      }],
+      "sourceType": "LocalFile",
+      "pathExpression": "/var/log/messages*",
+      "category": "pihc/os/syslog"
+  },
+  {
+    "name":"SAR-sysstat",
+    "description":"Test",
+    "category":"pihc/os/perf",
+    "automaticDateParsing":true,
+    "multilineProcessingEnabled":true,
+    "useAutolineMatching":true,
+    "forceTimeZone":false,
+    "filters":[],
+    "cutoffTimestamp":0,
+    "encoding":"UTF-8",
+    "file":"/etc/sumo-perf-script.sh",
+    "script":null,
+    "cronExpression":"* */2 * * * ? *",
+    "timeout":300000,
+    "workingDir":"",
+    "commands":["/bin/sh"],
+    "extension":null,
+    "sourceType":"Script"
+  },
+  {
+      "name": "syslog-collector-container-tcp",
+      "sourceType": "Syslog",
+      "port": 514,
+      "protocol": "TCP",
+      "encoding": "UTF-8",
+      "forceTimeZone": false,
+      "category": "pihc/containers"
+  }, {
+      "name": "syslog-collector-container-udp",
+      "sourceType": "Syslog",
+      "port": 514,
+      "protocol": "UDP",
+      "encoding": "UTF-8",
+      "forceTimeZone": false,
+      "category": "pihc/containers"
+  }]
+ }

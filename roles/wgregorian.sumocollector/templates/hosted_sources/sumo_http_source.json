@@ -1,0 +1,8 @@
+{
+   "api.version":"v1",
+   "source":{
+      "sourceType":"HTTP",
+      "name":"Example1",
+      "messagePerRequest": true
+   }
+}

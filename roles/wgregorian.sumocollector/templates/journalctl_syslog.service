@@ -1,1 +1,16 @@
-journalctl_syslog.service
+# {{ ansible_managed }}
+# journalctl_syslog.service
+# /etc/systemd/system/journalctl_syslog.service
+
+[Unit]
+Description=Send Journalctl to Sumo
+
+[Service]
+TimeoutStartSec=0
+ExecStart=/bin/bash -c '/usr/bin/journalctl -o json -f | jq -c \'. | select(._COMM | . and contains ("docker")) | {"__REALTIME_TIMESTAMP":.__REALTIME_TIMESTAMP,"CONTAINER_TAG":.CONTAINER_TAG, "_HOSTNAME":._HOSTNAME,"MESSAGE":."MESSAGE", "CONTAINER_ID":.CONTAINER_ID,"CONTAINER_NAME":.CONTAINER_NAME}\' | /usr/bin/ncat localhost 514'
+
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

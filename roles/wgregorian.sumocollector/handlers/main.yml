@@ -1,8 +1,31 @@
 ---
 
-
 - name: 'Restart SumoCollector'
   service:
-    name: collector
+    name: sumologic-collector
+    state: stopped
+  tags: [sumologic, sumologic-collector]
+  notify: 'Restart SumoCollector wait'
+  changed_when: True
+
+# attempt to avoid collectore uuid suffixes
+- name: 'Restart SumoCollector wait'
+  pause: 
+    seconds: 10
+  tags: [sumologic, sumologic-collector]
+  notify: 'Restart SumoCollector start'
+  changed_when: True
+
+- name: 'Restart SumoCollector start'
+  service:
+    name: sumologic-collector
+    state: started
+  tags: [sumologic, sumologic-collector]
+  changed_when: True
+
+- name: 'Restart journalctl_syslog service'
+  service:
+    name: journalctl_syslog
     state: restarted
   tags: [sumologic, sumologic-collector]
+

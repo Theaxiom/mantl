@@ -1,0 +1,18 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "Docker-Stats",
+      "alive": true,
+      "allContainers": true,
+      "certPath": "",
+      "filters": [{
+         "filterType": "Include",
+         "name": "StatsRateLimiter",
+         "regexp": "\\{\\\"read\\\"\\s:\\s\\\"\\d{4}-\\d{2}-\\w{5}:\\d{2}:[0][0|1|2].*"
+        }],
+      "multilineProcessingEnabled": true,
+      "sourceType": "DockerStats",
+      "uri": "unix:///var/run/docker.sock",
+      "category": "{{ deployment_id }}/infra/docker"
+     }
+}

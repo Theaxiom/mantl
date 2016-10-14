@@ -12,15 +12,42 @@
 #     - sumologic
 #     - sumologic_docker
 
-- name: run the sumo container
-  shell: docker run --rm -p 514:514 -p 514:514/udp --name=sumo-logic-collector 
-             -v /var/run/docker.sock:/var/run/docker.sock
-             -v /etc/sumo.conf:/etc/sumo.conf
-             -v /etc/sumologic-collector.json:/etc/sumo-sources.json
-             -v /var/log:/var/log
-             "{{updated_sumologic_docker_options | default(sumologic_docker_options) | default(omit)}}"
-             sumologic/collector:latest-syslog {{sumologic_collector_accessid}} {{sumologic_collector_accesskey}}
-  tags:
-    - sumologic
-    - sumologic_docker
+- name: install systemd unit for sumologic 
+  template:
+    src: sumologic-collector.service
+    dest: "{{ syslog_units_directory }}/sumologic-collector.service"
+    mode: 0700
+  notify: Restart Sumocollector
+  tags: [sumologic, sumologic_docker]
 
+- name: install systemd unit for journalctl to customize docker jounald logs 
+  template:
+    src: journalctl_syslog.service
+    dest: "{{ syslog_units_directory }}/journalctl_syslog.service"
+    mode: 0700
+  notify: Restart journalctl_syslog service
+  tags: [sumologic, sumologic_docker]
+
+- name: enable systemd units for sumologic-collector and journalctl_syslog
+  shell: creates="/home/{{ ansible_ssh_user }}/.ansible/markers/{{ item }}" systemctl enable "{{ item }}"  
+  with_items:
+    - sumologic-collector.service
+    - journalctl_syslog.service
+  tags: [sumologic, sumologic_docker]
+
+- name: start systemd units for sumologic-collector
+  service: 
+    name: "{{ item }}"
+    state: started
+  with_items:
+    - sumologic-collector.service
+    - journalctl_syslog.service
+  tags: [sumologic, sumologic_docker]
+
+- name: force stop journalctl_syslog service
+  service: 
+    name: "{{ item }}"
+    state: stopped
+  with_items:
+    - journalctl_syslog.service
+  tags: [sumologic, sumologic_docker]

@@ -1,12 +1,56 @@
 ---
 
-- name: 'Configure SumoCollector'
+# sumo.conf is deprecated in prefence of user.properties
+# This should be sym-linked by /opt/SumoCollector/config/user.properties
+# in mounted into container
+- name: 'Ensure sumologic_config_dir exists'
+  file:
+    state: directory
+    dest: "{{ sumologic_config_dir }}"
+    mode: 0700
+    owner: "{{ ansible_ssh_user }}"
+  tags: [sumologic, sumologic-collector]
+
+- name: 'Template SumoCollector files'
   template:
-    src: sumo.conf.j2
-    dest: /etc/sumo.conf
-  register: sumologic_collector_add_configuration
-  tags: sumologic
+    src: "{{ item }}"
+    dest: "{{ sumologic_config_dir }}/{{item}}"
+    mode: 0700
+    owner: "{{ ansible_ssh_user }}"
+  tags: [sumologic, sumologic-collector]
   notify: Restart SumoCollector
+  with_items:
+    - sumo-perf-script.sh 
+    - user.properties
+    - sumo-env.sh
+    - sumo-check-disk.sh
+
+- name: 'Optionally stop sumo'
+  shell: "{{ sumologic_collector_root}}/collector stop"
+  tags: [sumologic, sumologic-collector]
+  when: sumologic_remove_tar_install == "yes"
+  ignore_errors: yes
+
+- name: 'Optionally delete tar install'
+  file:
+    state: absent
+    dest: /opt/SumoCollector
+  tags: [sumologic, sumologic-collector]
+  when: sumologic_remove_tar_install == "yes"
+  ignore_errors: yes
+
+- name: 'Optionally delete yum install'
+  yum:
+    state: absent
+  tags: [sumologic, sumologic-collector]
+  when: sumologic_remove_yum_install == "yes"
+  ignore_errors: yes
+
+- name: 'Template cron for disk stats'
+  template:
+    src: etc_cron.d_disk
+    dest: /etc/cron.d/disk
+  tags: [sumologic, sumologic-collector]
 
 - name: 'Create collector configuration'
   template:
@@ -14,18 +58,63 @@
     dest: /etc/sumologic-collector.json
   tags: [sumologic, sumologic-collector]
   notify: Restart SumoCollector
+  when: sumologic_single_source_file == "yes"
+
+- name: 'Ensure sumo sources directory exists'
+  file:
+    state: directory
+    dest: "{{ sumologic_sources_dir }}"
+  tags: [sumologic, sumologic-collector]
+  when: sumologic_single_source_file != "yes"
+
+- name: 'Ensure sumo temp data and logs dir exists'
+  file:
+    state: directory
+    dest: "{{ sumologic_host_dir }}"
+  tags: [sumologic, sumologic-collector]
+
+- name: 'Template sources'
+  template:
+    src: ../templates/sources/{{ item | basename }}
+    dest: "{{ sumologic_sources_dir }}"
+  tags: [sumologic, sumologic-collector]
+  when: sumologic_single_source_file != "yes" 
+  with_fileglob: ../templates/sources/*
 
 - include: linux_performance.yml
-  tags: sumologic
+  tags: [sumologic, sumologic-collector]
   when: sumologic_do_sysstat | default(False)
 
-- name: 'Force restart SumoCollector'
-  shell: /usr/local/SumoCollector/collector restart
-  tags: [sumologic, sumologic-collector, sumologic_force_restart]
-  when: sumologic_force_restart == "yes"
-
 - include: native_install.yml
-  when: sumologic_install_method == "native"
+  when: sumologic_install_method == "yum"
+  tags: [sumologic, sumologic-collector]
 
 - include: docker_install.yml
   when: sumologic_install_method == "docker"
+  tags: [sumologic, sumologic-collector]
+
+- name: set udp limits for sumo 
+  shell: "{{ item }}"
+  with_items:
+   - sysctl -w net.core.wmem_max=8388608
+   - sysctl -w net.core.rmem_max=8388608
+  tags: [sumologic, sumologic-collector]
+
+- name: 'ensure collector is running'
+  service: 
+    name: "{{ item }}"
+    state: started
+  with_items:
+    - sumologic-collector.service
+  tags: [sumologic, sumologic_docker]
+
+- name: 'Force restart SumoCollector'
+  shell: "{{ sumologic_collector_root }}/collector restart"
+  tags: [sumologic, sumologic-collector, sumologic_force_restart]
+  when: (sumologic_force_restart == "yes") and (sumologic_install_method != "docker")
+  
+- name: 'Force restart SumoCollector docker'
+  shell: echo "restarting docker"
+  tags: [sumologic, sumologic-collector, sumologic_force_restart]
+  when: (sumologic_force_restart == "yes") and (sumologic_install_method == "docker")
+  notify: 'Restart SumoCollector'

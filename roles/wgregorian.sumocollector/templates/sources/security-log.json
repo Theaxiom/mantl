@@ -1,0 +1,9 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "Security-Log",
+      "sourceType": "LocalFile",
+      "pathExpression": "/var/log/secure*",
+      "category": "{{ deployment_id }}/os/secure"
+    }
+}

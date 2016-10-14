@@ -1,0 +1,40 @@
+# {{ansible_managed}}
+# sumologic-collector.service
+
+[Unit]
+Description=sumologic-collector
+After=docker.service
+After=consul.service
+Requires=docker.service
+Wants=consul.service
+
+[Service]
+Restart=on-failure
+RestartSec=20
+TimeoutStartSec=0
+
+ExecStartPre=-/usr/bin/docker kill sumologic-collector
+ExecStartPre=-/usr/bin/docker rm -f sumologic-collector
+ExecStartPre=-/usr/bin/docker pull sumologic/collector:latest-syslog
+
+ExecStart=/usr/bin/docker run \
+    --rm \
+    -p 514:514 -p 514:514/udp \
+    --name=sumologic-collector \
+    --env-file=/etc/sumo/sumo-env.sh \
+    -v /usr/bin/sadf:/usr/bin/sadf \
+    -v /var/log:/var/log \
+    -v /dev/mapper:/dev/mapper \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -v /cs/beanstalk/sumo/logs:/opt/SumoCollector/logs \
+    -v /cs/beanstalk/sumo/data:/opt/SumoCollector/data \
+    -v /etc/sumo:/etc/sumo \
+    -v /etc/sumo/user.properties:/opt/SumoCollector/config/user.properties \
+      sumologic/collector:latest-syslog {{ sumologic_collector_accessid }} {{ sumologic_collector_accesskey }}
+
+ExecStop=/usr/bin/docker kill sumologic-collector
+
+ExecReload=/usr/bin/docker kill -s SIGHUP sumologic-collector
+
+[Install]
+WantedBy=multi-user.target
