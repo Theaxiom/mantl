@@ -62,6 +62,10 @@ resource "aws_volume_attachment" "instance-lvm-attachment" {
   instance_id = "${element(aws_instance.instance.*.id, count.index)}"
   volume_id = "${element(aws_ebs_volume.ebs.*.id, count.index)}"
   force_detach = true
+
+  lifecycle {
+    ignore_changes = [ "volume_id", "instance_id" ]
+  }
 }
 
 
