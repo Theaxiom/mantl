@@ -11,5 +11,7 @@ SUMO_COLLECTOR_NAME={{ inventory_hostname }}
 {% if sumologic_single_source_file == "yes" %}
 SUMO_SOURCES_JSON=/etc/sumo/sumologic-collector.json
 {% else %}
-SUMO_SOURCES_JSON=/etc/sumo/sumo.d 
+SUMO_SOURCES_JSON=/etc/sumo/sumo.d
 {% endif %}
+SUMO_SYNC_SOURCES=true
+SUMO_CLOBBER=true

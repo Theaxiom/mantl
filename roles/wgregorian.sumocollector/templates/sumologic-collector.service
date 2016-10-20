@@ -23,6 +23,7 @@ ExecStart=/usr/bin/docker run \
     --name=sumologic-collector \
     --env-file=/etc/sumo/sumo-env.sh \
     -v /usr/bin/sadf:/usr/bin/sadf \
+    -v /usr/bin/journalctl:/usr/bin/journalctl \
     -v /var/log:/var/log \
     -v /dev/mapper:/dev/mapper \
     -v /var/run/docker.sock:/var/run/docker.sock \

@@ -1,181 +1,54 @@
 ---
 
 sumologic_collector_root: "{% if sumologic_install_method == 'yum' %}/usr/local/SumoCollector{% else %}/opt/SumoCollector{% endif %}"
-sumologic_host_dir: /cs/beanstalk/sumo
+# directory on the host machine to mount into container
+sumologic_host_dir: /opt/SumoCollector
+# default install method to docker
 sumologic_install_method: docker
+# consume multiple sources from /etc/sumo/sumo.d
 sumologic_single_source_file: "no"
-sumologic_config_dir: /etc/sumo
-sumologic_sources_dir: /etc/sumo/sumo.d
 syslog_units_directory: /usr/lib/systemd/system
 
+# directories inside container
+sumologic_config_dir: /etc/sumo
+sumologic_sources_dir: /etc/sumo/sumo.d
+
 sumologic_force_restart: "no"
+sumologic_collector_url: https://collectors.us2.sumologic.com
 # For RedHat only
 sumocollector_installer_rpm: "https://collectors.sumologic.com/rest/download/rpm/64"
 sumologic_installer_rpm_local_folder: "/tmp"
 
+# Example of using ncat to syslog tcp port 514
+# Use this if you don't have docker-daemon --log-driver=journald or json-file.
+# docker-logs.json with journald or json-file logger makes this un-necessary.
+sumologic_install_journal_syslog_service: "no"
 sumologic_remove_tar_install: "no"
 sumologic_remove_yum_install: "no"
 # For Debian apt installation only
 sumologic_installer_remote_file: "/tmp/sumocollector.deb"
 sumocollector_installer_download: "{{ sumo_installer_rpm }}"
 
+sumologic_mesos_error_seconds: 10
 # Credentials (Login to Sumo.  Username -> Preferences -> Create Access Key)
 sumologic_collector_accessid: "{{ lookup('env', 'SUMO_COLLECTOR_ACCESS_ID') }}"
 sumologic_collector_accesskey: "{{ lookup('env', 'SUMO_COLLECTOR_ACCESS_KEY') }}"
-sumologic_collector_name: "{{ inventory_hostname }}"
 
-# Allow overwrite of old collectors. See:
-#   https://service.sumologic.com/help/Default.htm#Using_Clobber.htm
-sumologic_collector_clobber: ""
-
-sumologic_collector_source_template: "collector.json.j2"
-sumologic_collector_timezone: "UTC"
-sumologic_collector_force_timezone: "false"
-# collection of logs should be index-aware placing logs likely to be searched together
+# Collection of logs should be index-aware placing logs likely to be searched together
 # into the same index.
 # The category field below + partition rules determines the index
 # Suggested partition rules:
 # sumo_category_major -> cluster supporting rancher/mantl or single orchestration layer
-# sumo_category_minor -> rancher environment (default, beta, dev)
-# sumo_category_detail -> stack
+sumologic_collector_name: "{{ inventory_hostname }}"
 
-# In a multi-tenant a host can have services from many different stacks (but only one rancher environment)
-# One could imagine templating out many sources in /etc/sumologic-collector.json and filtering them.
-# sumologic_category_prefix: "{{sumologic_category_major}}/{{sumologic_category_minor}}/{{sumologic_category_detail}}"
+# Allow overwrite of old collectors. See:
+#   https://service.sumologic.com/help/Default.htm#Using_Clobber.htm
+sumologic_collector_clobber: "true"
 
-sumologic_collector_log_paths:
-  common:
-    - name: "syslog-collector-container-tcp"
-      sourceType: "Syslog"
-      port: 514
-      protocol: "TCP"
-      encoding: "UTF-8"
-      forceTimeZone: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Syslog"
-      filters: [
-        {
-          filterType: "Exclude",
-          name: kubernetes,
-          regexp: .*kube.*
-        },
-        {
-          "filterType": "Exclude",
-          "name": "RPC request for DC",
-          "regexp": ".*RPC\\srequest\\sfor\\DC.*"
-        },
-        {
-          "filterType": "Exclude",
-          "name": "RPC request for DC",
-          "regexp": ".*No\\spath\\sto\\sdatacenter.*"
-        },
-        {
-          "filterType": "Exclude",
-          "name": "etcd",
-          "regexp": ".*etcd.*"
-        }
-      ]
-    - name: "syslog-collector-container-udp"
-      sourceType: "Syslog"
-      port: 514
-      protocol: "UDP"
-      encoding: "UTF-8"
-      forceTimeZone: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Syslog"
-      filters: [
-        {
-          filterType: "Exclude",
-          name: kubernetes,
-          regexp: .*kube.*
-        },
-        {
-          "filterType": "Exclude",
-          "name": "RPC request for DC",
-          "regexp": ".*RPC\\srequest\\sfor\\DC.*"
-        },
-        {
-          "filterType": "Exclude",
-          "name": "etcd",
-          "regexp": ".*etcd.*"
-        }
-      ]
-    # - name: "Sys Log"
-    #   path: "/var/log/messages"
-    #   multilineProcessingEnabled: true
-    #   category: "{{sumo_category_prefix | default(deployment_id)}}/OS/Syslog"
-    #   filters: [
-    #     {
-    #       filterType: "Exclude",
-    #       name: kubernetes,
-    #       regexp: .*kube.*
-    #     },
-    #     {
-    #       "filterType": "Exclude",
-    #       "name": "RPC request for DC",
-    #       "regexp": ".*RPC\\srequest\\sfor\\DC.*"
-    #     },
-    #     {
-    #       "filterType": "Exclude",
-    #       "name": "etcd",
-    #       "regexp": ".*etcd.*"
-    #     }
-    #   ]
-# filter exclude rules https://help.sumologic.com/Manage/Collectors_and_Sources/Processing_Rules/Include_and_Exclude_Rules
-    - name: "docker stats"
-      category: "{{sumo_category_prefix | default(deployment_id)}}/docker"
-      multilineProcessingEnabled: true
-      uri: "unix:///var/run/docker.sock"
-      allContainers: true
-      certPath: ""
-      sourceType: "DockerStats"
-      alive: true
-# rate limiting docker stats https://community.sumologic.com/s/article/Rate-Limiting-Docker-Stats-Source
-      filters: [{
-      "filterType": "Include",
-      "name": "StatsRateLimiter",
-      "regexp": "\\{\\\"read\\\"\\s:\\s\\\"\\d{4}-\\d{2}-\\w{5}:\\d{2}:[0][0|1|2].*"
-    }]
-    - name: "Access Log"
-      path: "/var/log/audit/*"
-      multilineProcessingEnabled: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/OS/Access"
-    - name: "Security Log"
-      path: "/var/log/secure*"
-      multilineProcessingEnabled: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/OS/Secure"
-    - name: "SAR sysstat"
-      sourceType: Script
-      path: /var/log/sa/*
-      multilineProcessingEnabled: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/OS/Perf"
-    - name: "mesos"
-      path: "/var/log/mesos/*.log*"
-      multilineProcessingEnabled: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/Mesos/Master"
+# Legacy vars from sumo.conf.  Possibly port to user.properties.
+sumologic_collector_source_template: "collector.json.j2"
+sumologic_collector_timezone: "UTC"
+sumologic_collector_force_timezone: "false"
 
-#####################################
-# HOST TYPE CUSTOMIZATIONS
-#####################################
-  edge:
-    - name: "Traefik logs"
-      path: "/var/log/traefik/*.log*"
-      multilineProcessingEnabled: false
-      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/traefik"
-
-instance_sources_mapping:
-  common:
-    - "access-log"
-    - "docker-logs"
-    - "docker-stats"
-    - "mesos"
-    - "sar-sysstat"
-    - "security-log"
-    - "syslog-collector-container-tcp"
-    - "syslog-collector-container-udp"
-    - "syslog"
-  # add tags of instance types as keys, lists of extra sources as values
-  # when: inventory_hostname in groups[{{item}}]
-  # with_items: instance_sources_mapping.keys
-  edge:
-    - "traefik"
 
 

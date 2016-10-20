@@ -24,6 +24,7 @@
     - user.properties
     - sumo-env.sh
     - sumo-check-disk.sh
+    - mesos-container-errors.sh
 
 - name: 'Optionally stop sumo'
   shell: "{{ sumologic_collector_root}}/collector stop"
@@ -50,6 +51,12 @@
   template:
     src: etc_cron.d_disk
     dest: /etc/cron.d/disk
+  tags: [sumologic, sumologic-collector]
+
+- name: 'Template cron for mesos-container-errors'
+  template:
+    src: etc_cron.d_mesos-container-errors
+    dest: /etc/cron.d/mesos-container-errors
   tags: [sumologic, sumologic-collector]
 
 - name: 'Create collector configuration'
@@ -93,28 +100,44 @@
   when: sumologic_install_method == "docker"
   tags: [sumologic, sumologic-collector]
 
-- name: set udp limits for sumo 
+- name: 'Set udp limits for sumo (native and inherited by container)'
   shell: "{{ item }}"
   with_items:
    - sysctl -w net.core.wmem_max=8388608
    - sysctl -w net.core.rmem_max=8388608
   tags: [sumologic, sumologic-collector]
 
-- name: 'ensure collector is running'
+- name: 'Ensure collector is running'
   service: 
     name: "{{ item }}"
     state: started
   with_items:
     - sumologic-collector.service
+  when: sumologic_install_method == "docker"
   tags: [sumologic, sumologic_docker]
 
 - name: 'Force restart SumoCollector'
   shell: "{{ sumologic_collector_root }}/collector restart"
   tags: [sumologic, sumologic-collector, sumologic_force_restart]
   when: (sumologic_force_restart == "yes") and (sumologic_install_method != "docker")
-  
-- name: 'Force restart SumoCollector docker'
-  shell: echo "restarting docker"
+
+- name: tmp remove old sources
+  file:
+    state: absent
+    dest: /etc/sumo/sumo.d/mesos.json
+    
+- name: 'Force restart SumoCollector docker daemon-reload'
+  #shell: echo "restarting docker && systemctl daemon-reload"
+  shell: systemctl daemon-reload
   tags: [sumologic, sumologic-collector, sumologic_force_restart]
   when: (sumologic_force_restart == "yes") and (sumologic_install_method == "docker")
-  notify: 'Restart SumoCollector'
+  #notify: 'Restart SumoCollector'
+
+- name: 'Force restart SumoCollector docker'
+  #shell: echo "restarting docker && systemctl daemon-reload"
+  service:
+    name: sumologic-collector
+    state: restarted
+  tags: [sumologic, sumologic-collector, sumologic_force_restart]
+  when: (sumologic_force_restart == "yes") and (sumologic_install_method == "docker")
+  #notify: 'Restart SumoCollector'

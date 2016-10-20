@@ -1,5 +1,13 @@
 ---
 
+- name: 'Systemctl daemon-reload sumologic-collector'
+  shell: systemctl daemon-reload
+  notify: 'Restart SumoCollector'
+
+- name: 'Systemctl daemon-reload journalctl_syslog'
+  shell: systemctl daemon-reload
+  notify: 'Restart journalctl_syslog service'
+
 - name: 'Restart SumoCollector'
   service:
     name: sumologic-collector
@@ -8,7 +16,8 @@
   notify: 'Restart SumoCollector wait'
   changed_when: True
 
-# attempt to avoid collectore uuid suffixes
+# attempt to avoid collectore uuid suffixes caused when
+# restart happens before sumo cloud recognizes old collector is gone.
 - name: 'Restart SumoCollector wait'
   pause: 
     seconds: 10
@@ -16,16 +25,20 @@
   notify: 'Restart SumoCollector start'
   changed_when: True
 
+# For apt / yum / tar installs, write a service wrapper
+# called sumologic-collector instead of 
+# existing templates/sumologic-collector.service
 - name: 'Restart SumoCollector start'
   service:
     name: sumologic-collector
     state: started
   tags: [sumologic, sumologic-collector]
   changed_when: True
+  notify: 'Restart journalctl_syslog service'
 
 - name: 'Restart journalctl_syslog service'
   service:
     name: journalctl_syslog
     state: restarted
   tags: [sumologic, sumologic-collector]
-
+  when: sumologic_install_journal_syslog_service == "yes"
