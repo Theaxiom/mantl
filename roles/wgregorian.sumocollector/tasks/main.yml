@@ -3,6 +3,7 @@
 # sumo.conf is deprecated in prefence of user.properties
 # This should be sym-linked by /opt/SumoCollector/config/user.properties
 # in mounted into container
+
 - name: 'Ensure sumologic_config_dir exists'
   file:
     state: directory
@@ -18,7 +19,6 @@
     mode: 0700
     owner: "{{ ansible_ssh_user }}"
   tags: [sumologic, sumologic-collector]
-  notify: Restart SumoCollector
   with_items:
     - sumo-perf-script.sh 
     - user.properties
@@ -125,7 +125,7 @@
   file:
     state: absent
     dest: /etc/sumo/sumo.d/mesos.json
-    
+
 - name: 'Force restart SumoCollector docker daemon-reload'
   #shell: echo "restarting docker && systemctl daemon-reload"
   shell: systemctl daemon-reload

@@ -15,6 +15,7 @@ processed in following order (name part using only for sorting/ordering):
   - volume -- set up logical volume with name ``name``
   - filesystem -- format filesystem and add ``.mount`` unit into  ``systemd``.
   - write -- action to write one-liner configs.
+  - options -- string of options.
 
 ``group`` module
 ----------------
