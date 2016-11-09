@@ -255,6 +255,20 @@ resource "aws_security_group" "monitoring" {
     cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
   }
 
+  ingress { # Marathon logs
+    from_port = 5678
+    to_port = 5678
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { # Syslog
+    from_port = 1514
+    to_port = 1514
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
 }
 
 output "edge_security_group" {
