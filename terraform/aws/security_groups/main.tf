@@ -188,7 +188,67 @@ resource "aws_security_group" "worker" {
     cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
   }
 
-  ingress { #all from office 
+  ingress { #all from office
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+}
+
+resource "aws_security_group" "monitoring" {
+  name = "${var.short_name}-monitoring"
+  description = "Allow inbound traffic for monitoring nodes"
+  vpc_id = "${var.vpc_id}"
+
+  tags {
+    KubernetesCluster = "${var.short_name}"
+  }
+
+  ingress { # SSH
+    from_port = 22
+    to_port = 22
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { # HTTP
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { # HTTPS
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { # Mesos
+    from_port = 5050
+    to_port = 5050
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { # Marathon
+    from_port = 8080
+    to_port = 8080
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { # Consul
+    from_port = 8500
+    to_port = 8500
+    protocol = "tcp"
+    cidr_blocks = ["${split(",",var.ingress_cidr_blocks)}"]
+  }
+
+  ingress { #all from office
     from_port = 0
     to_port = 0
     protocol = "-1"
@@ -210,5 +270,9 @@ output "ui_security_group" {
 }
 
 output "worker_security_group" {
+  value = "${aws_security_group.worker.id}"
+}
+
+output "monitoring_security_group" {
   value = "${aws_security_group.worker.id}"
 }
