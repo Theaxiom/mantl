@@ -48,4 +48,24 @@ networkInterface = "{{ ansible_default_ipv4['interface'] }}"
 ExposedByDefault = {{ traefik_marathon_expose_by_default }}
 
 
+{# 
+# Example of LoadBalancer with sticky session. Requires v > 1.1
+# I'm using traefik:v1.1.0-rc2 with rabbitmq-management using this rule :
 
+[backends]
+  [backends.rabbitmq]
+    [backends.rabbitmq.LoadBalancer]
+      method = "drr"
+      sticky = true
+    [backends.rabbitmq.servers.1]
+    url = "http://x.x.x.x:15672"
+    [backends.rabbitmq.servers.2]
+    url = "http://x.x.x.x:15672"
+    [backends.rabbitmq.servers.3]
+    url = "http://x.x.x.:15672"
+
+[frontends]
+  backend = "rabbitmq"
+    [frontends.rabbitmq.routes.rabbitmq]
+    rule = "PathPrefixStrip: /rabbitmq"
+ #}
