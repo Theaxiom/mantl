@@ -1,6 +1,4 @@
-export creds='admin:FlotsamJotsam33'
-export url=https://k4b4-mantl-control-01.node.c1.io
-export control_node=k4b4-mantl-control-01.node.c1.io
+source creds.sh
 
 # remove scheduler from marathon
 curl -sku $creds -XDELETE $url/marathon/v2/apps/elasticsearch

@@ -11,6 +11,8 @@ ssl/kubernetes
 # ansible
 *.retry
 
+creds.sh
+
 # terraform
 /*.tf
 **/*.tfstate*

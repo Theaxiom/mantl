@@ -7,10 +7,13 @@
 - name: 'Ensure sumologic_config_dir exists'
   file:
     state: directory
-    dest: "{{ sumologic_config_dir }}"
+    dest: "{{ item }}"
     mode: 0700
     owner: "{{ ansible_ssh_user }}"
   tags: [sumologic, sumologic-collector]
+  with_items:
+    - "/home/{{ ansible_ssh_user }}/.ansible/markers"
+    - "{{ sumologic_config_dir }}"
 
 - name: 'Template SumoCollector files'
   template:
