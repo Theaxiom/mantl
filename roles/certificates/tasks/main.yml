@@ -8,16 +8,16 @@
     group: root
   with_items:
     # CA public key
-    - src: ssl/cacert.pem
+    - src: "{{customer_dir}}/ssl/cacert.pem"
       dest: /etc/pki/CA/ca.cert
-    - src: ssl/cacert.pem
+    - src: "{{customer_dir}}/ssl/cacert.pem"
       dest: /etc/pki/ca-trust/source/cacert.pem
-    - src: ssl/cacert.pem
+    - src: "{{customer_dir}}/ssl/cacert.pem"
       dest: /etc/pki/ca-trust/source/anchors/cacert.pem
     # CA private key
-    - src: ssl/private/cakey.pem
+    - src: "{{customer_dir}}/ssl/private/cakey.pem"
       dest: /etc/pki/CA/ca.key
-    - src: ssl/private/cakey.pem
+    - src: "{{customer_dir}}/ssl/private/cakey.pem"
       dest: /etc/pki/CA/private/cakey.pem
   notify:
     - update-ca-trust
@@ -92,7 +92,7 @@
 - name: remove CA private keys
   sudo: yes
   file:
-    state: absent    
+    state: absent
     path: "{{ item.path }}"
   with_items:
     - path: /etc/pki/CA/ca.key
