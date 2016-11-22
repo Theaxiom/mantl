@@ -4,12 +4,12 @@ port = ":80"
 graceTimeOut = 10
 logLevel = "{{ traefik_loglevel }}"
 
-{% if traefik_log_path %}
-accessLogsFile = "{{ traefik_access_log_path }}"
+{% if traefik_access_log_path %}
+accessLogsFile = "/var/log/traefik/access.log"
 {% endif %}
 
 {% if traefik_access_log_path %}
-traefikLogsFile = "{{traefik_log_path}}"
+traefikLogsFile = "/var/log/traefik/traefik.log"
 {% endif %}
 
 {% if traefik_routed_cert_path %}
@@ -46,3 +46,6 @@ domain = "{{ traefik_marathon_domain }}"
 watch = true
 networkInterface = "{{ ansible_default_ipv4['interface'] }}"
 ExposedByDefault = {{ traefik_marathon_expose_by_default }}
+
+
+
