@@ -47,7 +47,6 @@
   sudo: yes
   command: >
     generate-certificate
-    --cacert /etc/pki/CA/ca.cert
     {% if country != "" %} --country "{{ country }}" {% endif %}
     {% if state != "" %} --state "{{ state }}" {% endif %}
     {% if locality != "" %} --locality "{{ locality }}" {% endif %}

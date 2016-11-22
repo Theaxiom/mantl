@@ -1,5 +1,7 @@
 ---
 dependencies:
+  - role: certificates
+    when: do_consul_ssl
   - role: handlers
   - role: distributive
     current_role: consul
