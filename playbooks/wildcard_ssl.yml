@@ -1,0 +1,83 @@
+---
+
+- name: make the cert directories
+  sudo: yes
+  file: 
+    state: directory
+    dest: "{{ item }}"
+  with_items:
+    - /private_certs
+    - /public_certs
+
+- name: copy certs to /public_certs
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "/public_certs/{{ item.dest }}"
+    owner: root
+  with_items: 
+    - { src: "ssl/public_certs/wildcard.c1.io.intermediate.cert.pem", dest: "ca.cert.pem" }
+    - { src: "ssl/public_certs/wildcard.c1.io.cert.pem", dest: "container.cert.pem" }
+  when: use_wildcard_certs == 'yes'
+
+- name: copy ca cert to /public_certs
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "/public_certs/{{ item.dest }}"
+    owner: root
+  with_items:
+    - { src: "ssl/cacert.pem", dest: "mantl.ca.cert.pem" }
+
+- name: copy private keys and concatenated certs to /private_certs
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "/private_certs/{{ item.dest }}"
+    owner: root
+  with_items:
+    - { src: "ssl/private_certs/wildcard.c1.io.key.pem", dest: "container.key.pem" }
+  when: use_wildcard_certs == 'yes'
+
+- name: deploy root ca
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "/etc/pki/ca-trust/source/anchors/{{ item.dest }}"
+    owner: root
+  with_items:
+    - { src: "ssl/cacert.pem", dest: "ca.cert.pem" }
+  notify:
+    - update-ca-trust
+
+- name: deploy root ca
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/ca-trust/source/anchors/{{ item }}"
+    owner: root
+  with_file_glob:
+    "ssl/public_certs/*"
+  notify:
+    - update-ca-trust
+  when: use_wildcard_certs == 'yes'
+
+- name: concatenate private key with cert for mongo
+  sudo: yes
+  shell: cat /private_certs/container.key.pem /public_certs/container.cert.pem > /private_certs/mongo.container.key.pem
+
+- name: copy the wildcard ca-chain into /public_certs  
+  sudo: yes
+  copy: 
+    src: "ssl/public_certs/geoTrust_CA_Chain.cert.pem"
+    dest: /public_certs/ca-chain.cert.pem
+  notify:
+    - update-ca-trust
+
+- name: place a /root/keyfile on worker nodes for mongo
+  sudo: yes
+  file: 
+    dest: /root/keyfile
+    mode: 0600
+    content: fluffyPizza
+  when: inventory_hostname in groups['role=worker']

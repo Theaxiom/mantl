@@ -1,0 +1,211 @@
+#!/bin/bash
+
+#  This should be sourced from the top level of the ansible-cognitivescale repo to pull the values in correctly
+
+trap "exit 1" TERM
+export TOP_PID=$$
+
+# Directory/repo for terraform
+SECURITY_SETUP=security-setup-cs
+MANTL_CONFIG_DIR="../mantl-config"
+TF_STATE_FILE='terraform.tfstate'
+TF_SECURITY_FILE='security.yml'
+TF_SSL_DIR='ssl'
+# if you modify ssl/openssl.cfg or ssl/openssl_req.cfg commit and add branchname here
+MANTL_SSL_BRANCH='kbroughton/feature/1277-make-naming-consistent-hosts-route53'
+
+usage="tfProfile [folder_name] [path_to_tf_file] \
+       folder_name is the directory name (not full path) holding the \
+       terraform config files. \
+       path_to_tf_file is the relpath to the .tf file \
+       eg. terraform/aws.sample.tf or terraform/gce.sample.tf"
+
+
+# safely remove symlinks.  Error if real file is found
+function safe_rm() {
+  if [ -f "${1}" ] && [ ! -L "${1}" ];then
+     echo "ERROR: real file $1 found.  Refusing to delete it for symlinking"
+     echo "Please remove the file or move it somewhere"
+     kill -s TERM $TOP_PID
+  elif [ -d "${1}" ] && [ ! -L "${1}" ];then
+     echo "ERROR: real directory $1 found.  Refusing to delete it for symlinking"
+     echo "Please remove the directory or move it somewhere"
+     kill -s TERM $TOP_PID  
+  else
+     echo "Removing symlink ${1}"
+     rm -irf "${1}"
+  fi
+}
+
+function tfApply() {
+
+  # To allow multiple deploy configurations create a sibling git repo to mantl
+  # and create folders per deployment.  Organizing files into a hierarchy is allowed.
+  # To run with all the defaults, set MANTL_CONFIG_DIR='.'
+
+
+#############################
+# TF_CONFIG_DIR 
+#############################
+
+  if [ "x${1}x" != "xx" ];then
+    TF_CONFIG_DIR=$(find ${MANTL_CONFIG_DIR} -type d -name $1);
+    TF_CONFIG_BASENAME=$(basename $TF_CONFIG_DIR)
+  
+
+    if [ ! -d "${TF_CONFIG_DIR}" ];then
+      echo TF_CONFIG_DIR is not defined
+      TF_CONFIG_DIR=''
+      EC2_INI=''
+      echo "Aborting"
+      kill -s TERM $TOP_PID
+    fi
+
+    echo "TF_CONFIG_DIR=${TF_CONFIG_DIR}"  
+    echo "Using MANTL_CONFIG_DIR = ${MANTL_CONFIG_DIR}"
+
+
+#############################
+# .tf file
+#############################
+  TF_PATH="${2:-$TF_PATH}"
+  if [ x"$TF_PATH"x != "xx" ];then
+    echo "Found TF_PATH $TF_PATH"
+  else
+    TF_PATH=$(find ${TF_CONFIG_DIR} -name "*.tf")
+    echo "Found TF_PATH=${TF_PATH} in ${TF_CONFIG_DIR}"
+  fi
+
+  # Move a .tf file into the pwd or use the existing one
+  if [ ! -f "${TF_PATH}" ];then
+      echo "TF_PATH ${TF_PATH} not specified, using working directory"
+      if [ $(ls *.tf | wc -l) -eq 0 ];then
+        echo "No .tf file found in pwd.  Please specify one"
+        echo $usage
+        kill -s TERM $TOP_PID
+      else
+        echo "Using $(ls *.tf) as terraform .tf file"
+      fi
+  else
+      TF_FILE=$(basename ${TF_PATH})
+      safe_rm "${TF_FILE}"
+      ln -s "${TF_PATH}" "${TF_FILE}"
+      echo "Using ${TF_PATH} as .tf file"
+  fi
+
+  # Warn if we have more than one .tf file
+  #echo "ls *.tf | wc -l = $(ls *.tf | wc -l)"
+  if [ $(ls *.tf | wc -l ) -gt 1 ];then
+      echo "WARNING: Found more than 1 .tf file"
+      echo "Press ctrl C to abort"
+      sleep 3
+      echo "Continuing with multiple .tf files"
+  fi
+
+
+    #############################
+    # terraform.tfvars file
+    #############################
+
+    TF_VARS_PATH=$(find ${TF_CONFIG_DIR} -name "*.tfvars" -o -name "*.tfvars.json")
+    echo "TF_VARS_PATH = ${TF_VARS_PATH}"
+    if [ -e "${TF_VARS_PATH}" ];then
+      TF_VARS_FILE=$(basename ${TF_VARS_PATH})
+      echo "TF_VARS_FILE = ${TF_VARS_FILE}"    
+      # if a real file exists don't overwrite it
+      if [ -f "${TF_VARS_FILE}" ] && [ ! -L "${TF_VARS_FILE}" ];then
+        echo "ERROR: ${TF_CONFIG_DIR}/${TF_VARS_FILE} exists"
+        echo "But a regular file ${TF_VARS_FILE} exists in the current directory"
+        echo "Refusing to delete the file.  Please move it"
+        kill -s TERM $TOP_PID
+      else
+        echo "SYMLINK TFVARS FILE INTO PLACE"
+        safe_rm "terraform.tfvars"
+        safe_rm "terraform.tfvars.json"
+        ln -s "${TF_CONFIG_DIR}/${TF_VARS_FILE}" "${TF_VARS_FILE}"
+        echo "TF_VARS_PATH = ${TF_CONFIG_DIR}/${TF_VARS_FILE}"
+      fi
+    else
+      echo "TF_VARS_FILE [${TF_VARS_FILE}] not found in [${TF_CONFIG_DIR}]"
+      echo "Using defaults in .tf file"
+    fi
+
+    if [ $(ls *tfvars* | wc -l ) -gt 1 ];then
+        echo "WARNING: Found more than 1 tfvars file"
+        echo "$(ls *tfvars* )"
+        echo "Press ctrl C to abort"
+        sleep 3
+        echo "Continuing with multiple .tfvars files, precedence may be undefined"
+    fi
+  #############################
+  # security.yml file and ssl dir
+  #############################
+    TF_SECURITY_EXISTS="yes"
+    if [ -e "${TF_CONFIG_DIR}/${TF_SECURITY_FILE}" ];then
+      safe_rm "${TF_SECURITY_FILE}"
+      ln -s "${TF_CONFIG_DIR}/${TF_SECURITY_FILE}" "${TF_SECURITY_FILE}"
+    else
+      echo "TF_SECURITY_FILE [${TF_SECURITY_FILE}] not found in [${TF_CONFIG_DIR}]"
+      safe_rm "${TF_SECURITY_FILE}"
+      TF_SECURITY_EXISTS="no"
+    fi
+
+    # SSL dir may not exist if security is turned off
+    TF_SSL_EXISTS="yes"
+    if [ -e "${TF_CONFIG_DIR}/${TF_SSL_DIR}" ];then
+      # security-setup already ran.  Remove existing links and add correct ones
+      safe_rm "${TF_SSL_DIR}"
+      ln -s "${TF_CONFIG_DIR}/${TF_SSL_DIR}" "${TF_SSL_DIR}"    
+    else
+      echo "TF_SSL_DIR [${TF_SSL_DIR}] not found in [${TF_CONFIG_DIR}]"
+      echo "Running security-setup"
+      TF_SSL_EXISTS="no"
+      safe_rm "${TF_SSL_DIR}"
+    fi
+    if [ "${TF_SSL_EXISTS}" == 'no' ] || [ "${TF_SECURITY_FILE}" == 'no' ];then
+      echo "Removing directory ${TF_SSL_DIR}"
+      rm -rf ssl
+      echo "Checking out ssl config files"
+      git checkout "${MANTL_SSL_BRANCH}" ssl
+      echo "Running security-setup"
+      ./${SECURITY_SETUP}
+      if [ "${TF_SECURITY_EXISTS}" == 'no' ];then
+        mv security.yml "${TF_CONFIG_DIR}"
+      fi
+      if [ "${TF_SSL_EXISTS}" == 'no' ];then
+        mv ssl "${TF_CONFIG_DIR}"
+      fi
+      ln -s "${TF_CONFIG_DIR}/${TF_SSL_DIR}" "${TF_SSL_DIR}"   
+      ln -s "${TF_CONFIG_DIR}/${TF_SECURITY_FILE}" "${TF_SECURITY_FILE}"      
+    fi
+
+    # By now ssl should be a symlinked dir if it exists
+
+  #############################
+  # .tfstate file
+  #############################
+    safe_rm "${TF_STATE_FILE}"
+
+    if [ -e "${TF_CONFIG_DIR}/${TF_STATE_FILE}" ];then
+      ln -s "${TF_CONFIG_DIR}/${TF_STATE_FILE}" "${TF_STATE_FILE}"
+      echo "Using TF_STATE_FILE=${TF_CONFIG_DIR}/terraform.tfstate"
+    else
+      echo "TF_STATE_FILE [terraform.tfvars or terraform.tfvars.json] not found in [${TF_CONFIG_DIR}]"
+      echo "Running terraform get and terraform apply"
+      terraform get
+    fi
+    echo "Verify your config files..."
+    echo "You have 5 seconds to press ctrl C to abort"
+    sleep 5
+    terraform apply
+  fi
+  echo "Success!"
+  if [ -f "${1}" ] && [ ! -L "${1}" ];then
+    echo "moving ${TF_STATE_FILE} to ${TF_CONFIG_DIR}"
+    mv ${TF_STATE_FILE} ${TF_CONFIG_DIR}
+    echo "symlinking ${TF_STATE_FILE} back into pwd"
+    ln -s "${TF_CONFIG_DIR}/${TF_STATE_FILE}" "${TF_STATE_FILE}"      
+  fi
+}
+
+tfApply ${1}

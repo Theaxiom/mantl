@@ -167,6 +167,27 @@ resource "aws_security_group" "worker" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress { # Vault
+    from_port = 8200
+    to_port = 8200
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress { # Vault
+    from_port = 8200
+    to_port = 8200
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+    ingress { # Mongodb
+    from_port = 27017
+    to_port = 27017
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   ingress { # ICMP
     from_port = -1
     to_port = -1

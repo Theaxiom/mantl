@@ -1,0 +1,76 @@
+# c12e_customize.yml
+
+- hosts: all
+  sudo: yes
+  vars: 
+    mantl_config_dir: ~/projects/mantl-config
+    wildcard_certs_dir: "{{mantl_config_dir}}/c1.io.certs"
+    use_wildcard_certs: "yes"
+  tasks:
+    - debug: msg="{{mantl_config_dir}}"
+
+    - name: install some basics
+      yum:
+        name: "{{item}}"
+      with_items:
+        - nano
+        - telnet
+
+
+    - name: make the destination directories
+      file:
+        state: directory
+        dest: /root/data/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}
+      with_fileglob: 
+       - "{{ mantl_config_dir }}/private_configs/*"
+
+    - name: copy private-config.json files to workers
+      copy:
+        src: "{{ item }}"
+        dest: /root/data/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}/private-config.json
+      with_fileglob: 
+       - "{{ mantl_config_dir }}/private_configs/*"
+
+    - include: wildcard_ssl.yml
+      when: (use_wildcard_certs == 'yes')
+
+    - name: make stateful directories 
+      file: 
+        state: directory
+        dest: "{{ item }}"  
+      with_items:
+       - /cs/beanstalk/prod-ihc/rabbitmq/ingest/mnesia
+       - /cs/beanstalk/prod-ihc/rabbitmq/ingest/logs
+       - /cs/beanstalk/prod-ihc/rabbitmq/ingest/data_directory
+       - /cs/beanstalk/prod-ihc/mongodb/ingest
+      when: inventory_hostname in groups['role=worker']
+
+    - name: concatenate CA and wildcard.cert for traefik
+      sudo: yes
+      shell: cat /public_certs/wildcard.c1.io.cert.pem /public_certs/geoTrust_CA_Chain.cert.pem  > /public_certs/wildcard-chain.c1.io.cert.pem
+
+    - name: concatenate private key with cert for mongo
+      sudo: yes
+      shell: cat /private_certs/container.key.pem /public_certs/container.cert.pem > /private_certs/mongo.container.key.pem
+      when: inventory_hostname in groups['role=worker']
+
+    - name: concatenate CA and container.cert for mongo
+      sudo: yes
+      shell: cat /public_certs/container.cert.pem /public_certs/ca.cert.pem > /public_certs/ca-chain.cert.pem
+      when: inventory_hostname in groups['role=worker']
+
+    - name: touch the /root/keyfile on workers
+      file:
+        state: touch
+        dest: /root/keyfile
+        mode: 0600
+      when: inventory_hostname in groups['role=worker']
+
+    - name: place a /root/keyfile on worker nodes for mongo
+      sudo: yes
+      copy: 
+        dest: /root/keyfile
+        mode: 0600
+        content: fluffyPizza
+      when: inventory_hostname in groups['role=worker']
+
