@@ -147,6 +147,14 @@ cert_opts.add_argument(
     '--cert-email',
     default='operations@example.com',
     help='contact email for organizational unit')
+cert_opts.add_argument(
+    '--no-verify-certificates',
+    action='store_true',
+    help='skip verifying certificates as part of setup process')
+cert_opts.add_argument(
+    '--dns-alt-cert-names-string',
+    default='',
+    help='extra dns names or ip as a comma separated string to pass to cert generation, eg "DNS:localhost,IP:1.1.1.1"')
 
 # mantlui
 mantlui_opts = parser.add_argument_group(

@@ -18,6 +18,8 @@ If not present, ``security-setup`` will create a root CA to generate
 certificates from. If you want to use your own CA, add the key in
 ``ssl/private/cakey.pem`` and the cert in ``ssl/cacert.pem``.
 
+If you are getting X509 errors that the url requested was example.com but the certificate is for *.node.consul or a similar mis-match, you may need to add alternate SAN names when generating the certificate.  run security-setup --dns_alt_cert_names_string "alternative SAN names for cert here"
+
 If you have your own (self)signed certificates, you can put them in
 ``ssl/private/your.key.pem`` and ``ssl/certs/your.cert.pem``. Just override the
 locations the script generates (for example the consul key and cert would be
