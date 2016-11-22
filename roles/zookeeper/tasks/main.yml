@@ -110,6 +110,26 @@
   tags:
     - zookeeper
 
+- name: stop zookeeper
+  sudo: yes
+  service:
+    name: "{{ zookeeper_service }}"
+    state: stopped
+  tags:
+    - clean_zookeeper
+    - zookeeper
+  when: do_clean_zookeeper is defined
+
+- name: remove zookeeper data directory
+  sudo: yes
+  file:
+    path: /var/lib/zookeeper/version-2
+    state: absent
+  tags:
+    - clean_zookeeper
+    - zookeeper
+  when: do_clean_zookeeper is defined
+
 - name: create zookeeper data directory
   sudo: yes
   file:

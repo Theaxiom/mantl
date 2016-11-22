@@ -29,6 +29,7 @@
     - restart mesos leader
   tags:
     - mesos
+    - security_rotation
 
 - name: write leader credentials
   sudo: yes
@@ -41,6 +42,7 @@
     - restart mesos leader
   tags:
     - mesos
+    - security_rotation
 
 - name: delete leader credentials
   sudo: yes
@@ -50,6 +52,7 @@
     state: absent
   tags:
     - mesos
+    - security_rotation
 
 - name: wait for zookeeper service to be registered
   wait_for:
@@ -60,6 +63,7 @@
     state: present
   tags:
     - marathon
+    - security_rotation
 
 - name: wait for zookeeper to listen
   command: "/usr/local/bin/zookeeper-wait-for-listen.sh localhost"
@@ -77,12 +81,14 @@
   delay: 10
   tags:
     - mesos
+    - security_rotation
 
 - name: write iptables configuration
   run_once: true
   command: consul-cli kv-write --token={{ consul_acl_secure_token }} secure/mesos/leader/ip_tables {{ do_mesos_iptables }}
   tags:
     - mesos
+    - security_rotation
 
 - name: deploy iptables configuration
   sudo: yes
@@ -98,5 +104,8 @@
     - reload consul-template
   tags:
     - mesos
+    - security_rotation
 
 - include: nginx-proxy.yml
+  tags:
+    - security_rotation

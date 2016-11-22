@@ -29,6 +29,8 @@
     - marathon
 
 - include: conf.yml
+  tags:
+    - marathon
 
 - name: configure marathon unit file
   sudo: yes

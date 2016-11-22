@@ -58,10 +58,9 @@
 - hosts: all
   gather_facts: no
   tasks:
-
-  # - name: create group of running instances
-  #   group_by: 
-  #     key: "{{ instance_state }}"
+  - name: create group of running instances
+    group_by: 
+      key: "{{ instance_state }}"
 
   - set_fact:
       consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
@@ -103,7 +102,7 @@
     register: register_consul_maint
     when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and ( inventory_hostname not in groups['role=control'] )
     failed_when: "{{ (register_consul_maint.rc != 0 ) and ( register_consul_maint.stdout.find('Error querying Consul agent') == -1 ) }}"
-    when: inventory_hostname not in groups['role=bastion']
+#    when: inventory_hostname not in groups['role=bastion']
 
   - name: stop host on non-control hosts
     local_action:
@@ -193,7 +192,7 @@
       delay: 1
       timeout: 300
       state: started
-    with_items: "{{ groups['aws_tag_sleep_control=dreamer'] | list) }}"
+    with_items: "{{ groups['aws_tag_sleep_control=dreamer'] | default([]) }}"
     when:  (do_wake == 'yes') and ('aws_tag_sleep_control' in groups) and ( item in groups['aws_tag_sleep_control=dreamer'] )
 
   - name: wait for over-ridden host boot
@@ -304,7 +303,7 @@
 
   - name: pause for rolling reboot
     pause:
-      seconds: 3
+      seconds: 1
 
 
 #################################

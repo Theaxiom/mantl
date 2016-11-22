@@ -40,6 +40,7 @@
   ec2_facts:
   tags:
     - mesos
+    - security_rotation
 
 - name: set private_ipv4 compatible with terraform.py inventory
   sudo: yes
@@ -48,6 +49,7 @@
   when: "{{ inventory_hostname != 'localhost' }}"
   tags:
     - mesos
+    - security_rotation
 
 - include: leader.yml
   when: mesos_mode == "leader" or mesos_mode == "mixed"

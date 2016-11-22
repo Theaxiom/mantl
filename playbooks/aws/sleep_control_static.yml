@@ -182,6 +182,7 @@
       ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
       ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
       wait: yes
+      wait_timeout: 600 
     when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and ( inventory_hostname not in (groups['role=control'] + ['localhost']) )
 
   - name: optionally stop host on control hosts
@@ -192,7 +193,7 @@
       region: "{{ region }}"
       ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
       ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
-      wait: yes
+      wait_timeout: 600 
     when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and (do_sleep_controllers == 'yes') and ( inventory_hostname != 'localhost')
 
 ###############################

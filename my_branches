@@ -27,3 +27,29 @@
 
     modified:   roles/logstash/templates/logstash.conf.j2
 
+000000000000000000000000
+
+June 7
+
+  modified:   my_branches
+  modified:   playbooks/c12e_customize.yml
+
+  modified:   playbooks/wildcard_ssl.yml
+
+  # mantl upstream ( support static ansible inventory localhost issues )
+  modified:   roles/consul/templates/peers.json.j2
+
+  # c12e_customize
+  # support for rabbitmq, nodejs, s3
+  modified:   roles/logstash/templates/logstash.conf.j2
+  modified:   users.yml
+
+kbroughton/feature/sleep_control
+  # add ec2_facts to marathon for start-at-task
+  # support static inventory ansible
+  modified:   roles/marathon/tasks/main.yml
+  modified:   roles/mesos/tasks/main.yml
+  library/ec2_remote_facts.py
+
+
+  
