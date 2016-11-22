@@ -67,21 +67,21 @@
     - marathon
     - chronos
     - mantlui
-    - kubernetes
-    - kubernetes-master
-    - kubernetes-addons
+    # - kubernetes
+    # - kubernetes-master
+    # - kubernetes-addons
 
 
-- hosts: role=kubeworker
-  # role=worker hosts are a subset of "all". Since we already gathered facts on
-  # all servers, we can skip it here to speed up the deployment.
-  gather_facts: yes
-  vars:
-    consul_dns_domain: consul
-  roles:
-    - flannel
-    - kubernetes
-    - kubernetes-node
+# - hosts: role=kubeworker
+#   # role=worker hosts are a subset of "all". Since we already gathered facts on
+#   # all servers, we can skip it here to speed up the deployment.
+#   gather_facts: yes
+#   vars:
+#     consul_dns_domain: consul
+#   roles:
+#     - flannel
+#     - kubernetes
+#     - kubernetes-node
 
 # The edge role exists solely for routing traffic into the cluster. Firewall
 # settings should be such that web traffic (ports 80 and 443) is exposed to the

@@ -25,14 +25,14 @@
     - name: make the destination directories
       file:
         state: directory
-        dest: /root/data/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}
+        dest: /cs/beanstalk/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}
       with_fileglob: 
        - "{{ mantl_config_dir }}/private_configs/*"
 
     - name: copy private-config.json files to workers
       copy:
         src: "{{ item }}"
-        dest: /root/data/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}/private-config.json
+        dest: /cs/beanstalk/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}/private-config.json
       with_fileglob: 
        - "{{ mantl_config_dir }}/private_configs/*"
 

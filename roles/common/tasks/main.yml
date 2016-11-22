@@ -3,9 +3,10 @@
 
 
 - debug: msg="{{groups}}"
-
 - name: gather ec2_facts
   ec2_facts:
+- debug: msg="{{ansible_ssh_host}}"
+- debug: msg="{{inventory_hostname}}"
 
 # - name: gather ec2_eni_facts
 #   ec2_eni_facts:

@@ -48,8 +48,8 @@
 - hosts: localhost
   gather_facts: no
   tasks:
-  - name: refresh terraform
-    local_action: shell chdir=../../ pwd && terraform refresh -target=module.route53 -target=module.control-nodes -target=module.worker-nodes -target=module.edge-nodes
+  # - name: refresh terraform
+  #   local_action: shell chdir=../../ pwd && terraform refresh -target=module.route53 -target=module.control-nodes -target=module.worker-nodes -target=module.edge-nodes
 
 #############################################################
 # Group by instance_state before we jump in serial mode
@@ -59,9 +59,9 @@
   gather_facts: no
   tasks:
 
-  - name: create group of running instances
-    group_by: 
-      key: "{{ instance_state }}"
+  # - name: create group of running instances
+  #   group_by: 
+  #     key: "{{ instance_state }}"
 
   - set_fact:
       consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
@@ -269,23 +269,23 @@
     register: register_ec2_tag
     run_once: yes  
 
-  - name: refresh terraform after stopping
-    local_action: shell chdir=../../ pwd && terraform refresh -target=module.route53 -target=module.control-nodes -target=module.worker-nodes -target=module.edge-nodes
+  # - name: refresh terraform after stopping
+  #   local_action: shell chdir=../../ pwd && terraform refresh -target=module.route53 -target=module.control-nodes -target=module.worker-nodes -target=module.edge-nodes
 
   - set_fact:
       consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
 
-  - name: create group of running instances after stopping
-    local_action:
-      module: group_by
-      key: "{{ hostvars[item]['instance_state'] }}"
-    with_items: "{{ consul_nodes }}"
+  # - name: create group of running instances after stopping
+  #   local_action:
+  #     module: group_by
+  #     key: "{{ hostvars[item]['instance_state'] }}"
+  #   with_items: "{{ consul_nodes }}"
 
 ###############################
 # Disable maintenance mode on consul running instances
 ###############################
 
-- hosts: running
+- hosts: all
   serial: 1
   vars:
     do_wake: 'yes'

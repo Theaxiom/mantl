@@ -1,5 +1,26 @@
 ---
 
+# TODO
+# /private_certs and /public/certs should be variables
+
+# This should probably be split into two files
+# The first in [optional edit to ] roles/common/tasks/ssl.yml to place 
+# the files into a standard  place on the host where containers can mount them.
+# Motivation: the location of these files has 
+# changed several times and may be os dependent.  Companies may have conventions
+# for locations for security reasons.
+
+# The second in roles/traefik/tasks/routed_certs.yml is to copy wildcard certs 
+# to traefik edge nodes to handle external
+# termination.  At the moment, the wildcards are added to all nodes.  It might be useful
+# for controller nodes so that we can have a verified cert for the mantlui.
+# It is unlikely the worker nodes would need them unless the workers were publicly routable.
+
+
+###########################################
+# move self-signed CA certs into place
+###########################################
+
 - name: make the cert directories
   sudo: yes
   file: 
@@ -29,15 +50,6 @@
     - src: /etc/pki/mantl/key
       dest: /private_certs/container.key.pem
 
-- name: copy public wildcard certs to /public_certs
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/public_certs/{{ item | basename }}"
-    owner: root
-    mode: 0644
-  with_fileglob: 
-    - "{{ wildcard_certs_dir }}/public_certs/*"
 
 - name: copy public wildcard certs to /etc/pki/CA/
   sudo: yes
@@ -102,6 +114,11 @@
     - src: ../ssl/private/host.key.pem
       dest: /private_certs/container.key.pem
 
+###########################################
+# move 3rd party wildcard certs into place
+# (these could conceivably be letsencrypt HA certs too)
+###########################################
+
 - name: copy public wildcard certs to /public_certs
   sudo: yes
   copy:
@@ -112,6 +129,7 @@
   with_fileglob: 
     - "{{ wildcard_certs_dir }}/public_certs/*"
 
+# This step may be un-necessary.  Determine minimal required.
 - name: copy public wildcard certs to /etc/pki/CA/
   sudo: yes
   copy:
@@ -152,39 +170,37 @@
   sudo: yes
   copy:
     src: "{{ item }}"
-    dest: "/private_certs/{{ item | basename }}"
-    owner: root
-
-  file:
+      file:
     state: file
     dest: "{{ item }}"
     owner: traefik
     mode: 0400
   with_fileglob:
-    - "/private_certs/*"
-  when: inventory_hostname in groups['role=edge']
+    - "{{ wildcard_certs_dir }}/private_certs/*"
 
-- name: copy wildcard private keys to /etc/pki/tls/private
-  sudo: yes
-  file:
-    state: file
-    dest: "{{ item }}"
-    owner: traefik
-    mode: 0400
-  with_fileglob:
-    - "/private_certs/*"
-  when: inventory_hostname in groups['role=edge']
+- name: ensure ssl_services group exists
+  group:
+    name: ssl_services
+    state: present
 
 - name: on edge nodes make traefik owner of /private_certs
   sudo: yes
   file:
-    state: file
-    dest: "{{ item }}"
+    state: directory
+    dest: "/private_certs"
     owner: traefik
-    mode: 0400
-  with_fileglob:
-    - "/private_certs/*"
+    mode: 0440
+    recurse: yes
   when: inventory_hostname in groups['role=edge']
+
+- name: on all nodes make ssl_services group owner of /private_certs
+  sudo: yes
+  file:
+    state: directory
+    dest: "/private_certs"
+    group: ssl_services
+    mode: 0440
+    recurse: yes
 
 - name: copy wildcard private keys to /etc/pki/CA/
   sudo: yes
@@ -198,3 +214,10 @@
 
 - name: update-ca-trust
   shell: update-ca-trust
+
+# This should be moved to traefik/handlers/main.yml if placed in a role
+- name: restart traefik
+  service:
+    name: traefik
+    state: restarted
+  when: inventory_hostname in groups['role=edge']

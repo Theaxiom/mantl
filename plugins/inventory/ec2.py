@@ -425,7 +425,12 @@ class Ec2Inventory(object):
 
         # Select the best destination address
         if instance.subnet_id:
-            dest = getattr(instance, self.vpc_destination_variable)
+            if self.vpc_destination_variable == 'instance_name':
+                dest = instance.tags.get('inventory_hostname',None)
+                if not dest:
+                    dest = instance.tags.get('Name',None)
+            else:
+                dest = getattr(instance, self.vpc_destination_variable)
         else:
             dest =  getattr(instance, self.destination_variable)
 
