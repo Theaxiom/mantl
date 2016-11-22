@@ -193,6 +193,8 @@ Terraform to provision your cluster, ``terraform plan`` to see what will be
 created, and ``terraform apply`` to provision the cluster.
 
 After ``terraform apply`` has completed without errors, you're ready to continue.
+If you are using elastic ips on aws, you need to run ``terraform refresh`` to allow the eips to replace the public ips due to terraform issue 5407. 
+For more than 5 elastic ips, you must `submit a request <http://aws.amazon.com/contact-us/eip_limit_request/>`_ to increase your limit but they are trivially inexpensive.
 Next, follow the instructions at :doc:`getting started <index>` to install
 Mantl on your new AWS VM's
 

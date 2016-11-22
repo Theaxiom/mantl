@@ -15,7 +15,9 @@ variable "source_ami" {}
 variable "security_group_ids" {}
 variable "vpc_subnet_ids" {}
 variable "ssh_username" {default = "centos"}
-
+# elastic ips are required if you wish to reboot instances without losing public ips
+variable "use_elastic_ips" {default = "1"}
+variable "associate_public_ip_address" {default = "true"}
 
 resource "aws_ebs_volume" "ebs" {
   availability_zone = "${element(split(",", var.availability_zones), count.index)}"
@@ -36,8 +38,8 @@ resource "aws_instance" "instance" {
   count = "${var.count}"
   vpc_security_group_ids = [ "${split(",", var.security_group_ids)}"]
   key_name = "${var.ssh_key_pair}"
-  associate_public_ip_address = true
-  subnet_id = "${element(split(",", var.vpc_subnet_ids), count.index)}"
+  associate_public_ip_address = "${var.associate_public_ip_address}"
+  subnet_id = "${element(split(",", var.vpc_subnet_ids), count.index)}" 
   iam_instance_profile = "${var.iam_profile}"
   root_block_device {
     delete_on_termination = true
@@ -55,6 +57,11 @@ resource "aws_instance" "instance" {
   }
 }
 
+resource "aws_eip" "eip" {
+    count = "${var.count * var.use_elastic_ips}"
+    instance = "${element(aws_instance.instance.*.id, count.index)}"
+    vpc = true
+}
 
 resource "aws_volume_attachment" "instance-lvm-attachment" {
   count = "${var.count}"
@@ -63,7 +70,6 @@ resource "aws_volume_attachment" "instance-lvm-attachment" {
   volume_id = "${element(aws_ebs_volume.ebs.*.id, count.index)}"
   force_detach = true
 }
-
 
 
 output "hostname_list" {
@@ -77,3 +83,8 @@ output "ec2_ids" {
 output "ec2_ips" {
   value = "${join(",", aws_instance.instance.*.public_ip)}"
 }
+
+output "ec2_eips" {
+  value = "${join(\",\", aws_eip.eip.*.public_ip)}"
+}
+

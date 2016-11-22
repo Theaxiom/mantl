@@ -4,11 +4,23 @@
 # on components in your cluster!
 - include: "{{ playbook_dir }}/playbooks/check-requirements.yml"
 
+# If using elastic ips on aws, we need to refresh terraform so that the public_ips
+# pick up the elastic ips, not the original non-elastic public ips.  This is due to
+# a bug in terraform https://github.com/hashicorp/terraform/issues/5407
+# For more than 5 elastic ips, you must submit a request to increase your limit
+# but they are trivially cheap http://aws.amazon.com/contact-us/eip_limit_request/
+- hosts: localhost
+  gather_facts: no
+  tasks:
+   - name: refresh terraform
+     shell: terraform refresh
+
 # BASICS - we need every node in the cluster to have common software running to
 # increase stability and enable service discovery. You can look at the
 # documentation for each of these components in their README file in the
 # `roles/` directory, or by checking the online documentation at
 # docs.mantl.io.
+
 - hosts: all
   vars:
     # consul_acl_datacenter should be set to the datacenter you want to control
