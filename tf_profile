@@ -12,7 +12,7 @@ TF_STATE_FILE='terraform.tfstate'
 TF_SECURITY_FILE='security.yml'
 TF_SSL_DIR='ssl'
 # if you modify ssl/openssl.cfg or ssl/openssl_req.cfg commit and add branchname here
-MANTL_SSL_BRANCH='kbroughton/feature/1277-make-naming-consistent-hosts-route53'
+#MANTL_SSL_BRANCH='kbroughton/feature/1277-make-naming-consistent-hosts-route53'
 
 usage="tfProfile [folder_name] [path_to_tf_file] \
        folder_name is the directory name (not full path) holding the \
@@ -166,7 +166,7 @@ function tfApply() {
       echo "Removing directory ${TF_SSL_DIR}"
       rm -rf ssl
       echo "Checking out ssl config files"
-      git checkout "${MANTL_SSL_BRANCH}" ssl
+      #git checkout "${MANTL_SSL_BRANCH}" ssl
       echo "Running security-setup"
       ./${SECURITY_SETUP}
       if [ "${TF_SECURITY_EXISTS}" == 'no' ];then

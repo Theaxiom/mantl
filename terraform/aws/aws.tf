@@ -14,7 +14,7 @@ variable "edge_volume_size" {default = "10"} # size is in gigabytes
 variable "edge_data_volume_size" {default = "20"} # size is in gigabytes
 variable "network_ipv4" {default = "10.0.0.0/16"}
 variable "network_subnet_ip4" {default = "10.0.0.0/16"}
-variable "short_name" {default = "mantl"}
+#variable "short_name" {default = "mantl"}
 variable "long_name" {default = "mantl"}
 variable "source_ami" {}
 variable "ssh_key" {default = "~/.ssh/id_rsa.pub"}

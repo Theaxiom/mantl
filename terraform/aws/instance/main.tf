@@ -85,6 +85,6 @@ output "ec2_ips" {
 }
 
 output "ec2_eips" {
-  value = "${join(\",\", aws_eip.eip.*.public_ip)}"
+  value = "${join(",", aws_eip.eip.*.public_ip)}"
 }
 
