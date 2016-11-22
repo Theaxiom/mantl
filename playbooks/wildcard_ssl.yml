@@ -5,6 +5,7 @@
   file: 
     state: directory
     dest: "{{ item }}"
+    mode: 0755
   with_items:
     - /private_certs
     - /public_certs
@@ -81,3 +82,79 @@
     mode: 0600
     content: fluffyPizza
   when: inventory_hostname in groups['role=worker']
+
+- name: copy container keys and certs into place
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+  with_items:
+    - src: ../ssl/cacert.pem
+      dest: /public_certs/ca.cert.pem
+    - src: ../ssl/certs/host.cert.pem
+      dest: /public_certs/container.cert.pem
+    - src: ../ssl/private/host.key.pem
+      dest: /private_certs/container.key.pem
+
+- name: copy public wildcard certs to /public_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/public_certs/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob: 
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+
+- name: copy public wildcard certs to /etc/pki/CA/
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/CA/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+
+- name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/ca-trust/source/anchors/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+
+- name: copy wildcard private keys to /private_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/private_certs/{{ item | basename }}"
+    owner: root
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: copy wildcard private keys to /etc/pki/tls/private
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/tls/private/{{ item | basename }}"
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: copy wildcard private keys to /etc/pki/CA/
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/CA/{{ item | basename }}"
+    owner: root
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: update-ca-trust
+  shell: update-ca-trust

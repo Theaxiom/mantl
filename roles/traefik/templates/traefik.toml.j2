@@ -1,8 +1,41 @@
+# {{ansible_managed}}
+
 port = ":80"
 graceTimeOut = 10
-logLevel = "ERROR"
+logLevel = "{{ traefik_loglevel }}"
+
+{% if traefik_log_path %}
+accessLogsFile = "{{ traefik_access_log_path }}"
+{% endif %}
+
+{% if traefik_access_log_path %}
+traefikLogsFile = "{{traefik_log_path}}"
+{% endif %}
+
+{% if traefik_routed_cert_path %}
+defaultEntryPoints = ["http", "https"]
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+    entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      certFile = "{{ traefik_routed_cert_path }}"
+      keyFile = "{{ traefik_routed_key_path }}"
+{% endif %}
+
+{% if traefik_retry_attempts %}
+[retry]
+# default is -1 -> the number of backends for a frontend
+attempts = {{traefik_retry_attempts | int }}
+{% endif %}
 
 [web]
+# The key and cert here are for accessing the web ui over ssl
+# They do not affect routed traffic to the back end 
 address = ":8081"
 CertFile = "/etc/pki/mantl/cert"
 KeyFile = "/etc/pki/mantl/key"
