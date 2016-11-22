@@ -80,7 +80,7 @@
     - debug: msg="{{ register_ec2_remote_facts.instances }}"
 
 
-- hosts: all
+- hosts: all:!localhost
   gather_facts: no
   tasks:
     - set_fact: 
@@ -95,7 +95,8 @@
     - set_fact:
         instance_state: "{{ item['state'] }}"
       with_items: "{{ register_ec2_remote_facts['instances'] }}"
-      when: "{{ item['tags']['Name'] == inventory_hostname }}"
+      #when: "{{ item['tags']['Name'] == inventory_hostname }}"
+      when: inventory_hostname != 'localhost'
 
     - name: group instances by instance state
       group_by: 
@@ -197,7 +198,7 @@
     when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and (do_sleep_controllers == 'yes') and ( inventory_hostname != 'localhost')
 
 ###############################
-# Startup block
+# Startup block local
 ###############################
 
 # Looping against localhost is naturally serialized, just add pause if needed
@@ -253,7 +254,7 @@
       ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
       wait: yes
     with_items: "{{ register_ec2_remote_facts['instances'] }}"
-    when: ( ('aws_tag_sleep_control' in groups) and ( item['tags']['Name'] in groups['aws_tag_sleep_control=dreamer'] )  or ( override_tags != 'no' ) ) and ( do_wake == 'yes' ) and ( item['tags']['Name'] not in groups['role=control'] )
+    when: ( ('aws_tag_sleep_control' in groups) and ( item['tags']['Name'] in groups['aws_tag_sleep_control=dreamer'] )  or ( override_tags != 'no' ) ) and ( do_wake == 'yes' ) and ( item['tags']['Name'] not in groups['role=control'] ) and item['tags']['Name'] != 'localhost'
 
   - name: wait for host boot on tagged servers
     local_action:
@@ -265,7 +266,7 @@
       timeout: 300
       state: started
     with_items: "{{ register_ec2_remote_facts['instances'] }}"
-    when:  (do_wake == 'yes') and ((override_tags == 'yes') or and ('aws_tag_sleep_control' in groups) and ( item in groups['aws_tag_sleep_control=dreamer'] ) )
+    when:  (do_wake == 'yes') and ((override_tags == 'yes') or ('aws_tag_sleep_control' in groups) and ( item in groups['aws_tag_sleep_control=dreamer'] ) )
 
   - name: wait for over-ridden host boot
     local_action:
@@ -338,7 +339,7 @@
   - set_fact:
       consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
 
-  - name: get ec2_remote_facts in startup block
+  - name: get ec2_remote_facts in startup regroup block
     ec2_remote_facts:
       filters:
         vpc-id: "{{vpc_id}}"
@@ -352,11 +353,12 @@
       key: "{{ item['state'] }}"
     with_items: "{{ register_ec2_remote_facts['instances'] }}" 
 
+  - debug: msg="{{groups}}"
+
   # - name: create group of running instances after stopping
   #   local_action:
   #     module: group_by
   #     key: "{{ hostvars[item]['instance_state'] }}"
-  #   with_items: "{{ consul_nodes }}"
 
 ###############################
 # Disable maintenance mode on consul running instances

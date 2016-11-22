@@ -1,4 +1,21 @@
 ---
+
+- name: gather ec2 facts 
+  ec2_facts: 
+  tags:
+    - certificates
+
+- name: set private_ipv4 compatible with terraform.py inventory
+  set_fact:
+    private_ipv4: "{{ ansible_ec2_local_ipv4 }}"
+  when: "{{ inventory_hostname != 'localhost' }}"
+  tags:
+    - certificates
+
+- debug: msg="{{dns}} {{ip}}"
+  tags:
+    - certificates
+
 - name: deploy CA public and private keys
   sudo: yes
   copy:
@@ -39,7 +56,23 @@
     path: "{{ destination }}"
     owner: root
     group: root
-    mode: 0755
+    mode: 755
+  tags:
+    - certificates
+
+# - name: backup marker file if rotating certificates
+#   sudo: yes
+#   command: 
+#     mv "{{ destination }}/{{ prefix }}{% if prefix != '' %}.{% endif %}key" "{{ destination }}/{{ prefix }}{% if prefix != '' %}.{% endif %}key.bak"    
+#   when: certificates_rotate | default('no') == "yes"
+#   tags:
+#     - certificates
+
+- name: set unique_subject = no
+  copy:
+    dest: "/etc/pki/CA/index.txt.attr"
+    content: "unique_subject = no"
+    mode: 0644
   tags:
     - certificates
 

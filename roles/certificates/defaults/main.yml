@@ -4,7 +4,7 @@ generate_certificate_package: generate-certificate-0.1.1-1
 # Options passed to generate-certificate
 country: ""      # Default: US
 state: ""        # Default: New York
-locality: ""     # Default: Anytown
+locality: "Austin"     # Default: Anytown
 organization: "" # Default: Example Company Inc
 unit: ""         # Default: Operations
 email: ""        # Default: operations@example.com
@@ -16,11 +16,14 @@ dns:
   - "{{ inventory_hostname }}.node.consul"
   - "{{ inventory_hostname }}.node"
   - "{{ inventory_hostname }}.node.consul"
+  - "{{ ansible_fqdn }}"
+  - "{{ ansible_fqdn }}.node"
+  - "{{ ansible_fqdn }}.node.consul"
   - "*.service"
   - "*.service.consul"
 # What IP addresses will this certificate be valid for?
 ip:
-  - "{{ public_ipv4 }}"
+#  - "{{ public_ipv4 }}"
   - "{{ private_ipv4 }}"
   - "{{ ansible_ssh_host }}"
 # Don't change these defaults; many components depend on the expected locations.

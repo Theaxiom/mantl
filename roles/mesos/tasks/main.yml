@@ -1,5 +1,8 @@
 ---
 
+- include: clean-mesos.yml
+  when: do_clean_mesos is defined
+  
 - name: install mesos packages
   sudo: yes
   yum:

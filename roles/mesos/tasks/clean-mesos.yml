@@ -1,0 +1,35 @@
+# clean-mesos.yml
+
+- name: stop mesos masters
+  sudo: yes
+  command: systemctl stop mesos-master
+  when: inventory_hostname in groups['role=control']
+  tags:
+    - clean_mesos
+  ignore_errors: yes
+
+- name: stop mesos masters
+  sudo: yes
+  command: systemctl stop mesos-agent
+  when: inventory_hostname in groups['role=worker']
+  tags:
+    - clean_mesos
+  ignore_errors: yes
+  
+- name: uninstall mesos packages
+  sudo: yes
+  yum:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ mesos_package }}"
+  tags:
+    - clean_mesos
+
+- name: remove mesos directory
+  sudo: yes
+  file:
+    state: absent
+    dest: /var/lib/mesos 
+  tags:
+    - clean_mesos

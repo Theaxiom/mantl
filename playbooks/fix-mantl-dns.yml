@@ -1,0 +1,84 @@
+---
+- hosts: all
+  tasks:
+    - name: deregister consul services
+      sudo: yes
+      shell: consul-cli service-deregister "{{item}}"
+      with_items:
+        - zookeeper
+        - marathon
+        - mesos
+
+    - name: ensure fail2ban dirs exist
+      sudo: yes
+      file:
+        dest: /var/run/fail2ban
+        state: directory
+
+- hosts: all
+  tasks:
+  vars: 
+    do_docker_restart: 'yes'
+  serial: 1
+  handlers:
+
+    - name: restart dnsmasq
+      sudo: yes
+      service:
+        name: dnsmasq
+        state: restarted
+
+  tasks:
+
+    - name: restart docker service
+      sudo: yes
+      service:
+        name: docker
+        state: restarted
+      when: do_docker_restart == 'yes'
+  
+    - name: start falliable services like consul, nginx-consul
+      sudo: yes
+      service:
+        name: "{{item}}"
+        state: started
+      with_items:
+         - cloud-init
+         - cloud-init-local
+         - consul
+         - nginx-consul
+         - fail2ban
+         - logstash
+
+- hosts: all
+  tasks:
+    - name: ensure traefik service is running on edge nodes
+      sudo: yes
+      service:
+        name: traefik
+        state: started
+      when: inventory_hostname in groups['role=edge']
+
+    - name: ensure mantlui is running on control nodes
+      sudo: yes
+      service:
+        name: nginx-mantlui
+        state: started
+      when: inventory_hostname in groups['role=control']
+
+    # - name: remove consul from list of search domains
+    #   sudo: yes
+    #   lineinfile:
+    #     dest: /etc/resolv.conf.mantl-dns
+    #     regexp: '^search node.consul consul (.*)'
+    #     line: 'search \1'
+    #     backrefs: yes
+    #   notify: restart dnsmasq
+
+    # - name: remove options from /etc/resolv.conf.mantl-dns
+    #   sudo: yes
+    #   lineinfile:
+    #     dest: /etc/resolv.conf.mantl-dns
+    #     regexp: '^options'
+    #     state: absent
+    #   notify: restart dnsmasq

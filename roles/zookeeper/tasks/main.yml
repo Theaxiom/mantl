@@ -130,6 +130,16 @@
     - zookeeper
   when: do_clean_zookeeper is defined
 
+- name: uninstall zookeeper package
+  sudo: yes
+  yum:
+    name: mesosphere-zookeeper.x86_64
+    state: absent
+  tags:
+    - clean_zookeeper
+    - zookeeper
+  when: do_clean_zookeeper is defined
+
 - name: create zookeeper data directory
   sudo: yes
   file:
