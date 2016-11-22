@@ -166,12 +166,14 @@
 
 - name: copy wildcard private keys to /etc/pki/tls/private
   sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/pki/tls/private/{{ item | basename }}"
+  file:
+    state: file
+    dest: "{{ item }}"
+    owner: traefik
     mode: 0400
   with_fileglob:
-    - "{{ wildcard_certs_dir }}/private_certs/*"
+    - "/private_certs/*"
+  when: inventory_hostname in groups['role=edge']
 
 - name: on edge nodes make traefik owner of /private_certs
   sudo: yes
