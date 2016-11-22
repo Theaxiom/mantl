@@ -1,0 +1,29 @@
+# consumer.yml
+
+
+- name: Add a consumer
+  kong_consumer:
+    kong_admin_uri: "{{ kong_admin_base_url }}"
+    username: "{{ item.username }}"
+    state: present
+  with_items: "{{ kong_consumers }}"
+  register: register_kong_consumer
+
+- debug: msg="register_kong_consumer={{register_kong_consumer}}"
+
+- name: Configure consumer
+  kong_consumer:
+    kong_admin_uri: "{{ kong_admin_base_url }}"
+    username: "{{ item.username }}"
+    api_name: key-auth
+    data: 
+      key: "{{item.key}}"
+    state: configure
+  with_items: "{{ kong_consumers }}" 
+
+- name: Verify consumers can access API 
+  uri: 
+    url: "{{ kong_base_url }}/mockbin"
+    HEADER_apikey: "{{item.key}}"
+    status_code: 200
+  with_items: "{{ kong_consumers }}"

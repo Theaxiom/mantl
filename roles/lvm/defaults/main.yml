@@ -8,3 +8,6 @@ lvm_physical_device: >
   {%- endif -%}{%- endif -%}
 
 debug_storage_setup: False
+
+mongodb_lvm_physical_device: /dev/xvdg
+mongodb_lvm_volume_group_name: mongodb

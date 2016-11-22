@@ -1,0 +1,15 @@
+# chronos_create_jobs.yml
+
+# This is intended to be a thin deployment wrapper for a tools in a project master repo.
+# Given that the chron jobs are likeley to evolve throughout the course of the
+# egnagement, the tools should be in the hands of the developer so ansible
+# will place an initial set of jobs in the master project repo and then
+# the master repo will become the center for job evolution thereafter.
+
+- name: create a token for chronos jobs
+  shell: vault token-create -metadata="reason=mongodb-s3-backup-restore" -use-limit=100 -ttl=24h -format=json | jq '.auth.client_token'
+  register: register_vault_token
+
+- name: synchronize chronos project jobs 
+  shell: "{{local_chronos_projects_path}}/chronos-sync.sh"
+  

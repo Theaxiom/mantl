@@ -25,3 +25,28 @@ users:
    email: bcarter@cognitivescale.com
    pubkeys:
     - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCwqFUi+X5rbgKM+b8BZvUJ1PaPP2MlKfrtyWKjGAwJ7Bh7h5r4cmSNqSf+j8vRAWLEVqXmvLQANiEQapb1wk5Bp/gBub00ymEqxL+71BByy00ZPJwfE7BTouw4/4px2RcYz8SFPmmE4ck1v5n8EzFmeZZtlCcHErW209Wcldb5Xmd5/7wok9v1LUNNk71fL5dTaKzX4iqV+REtU7K9O2idWlv1yMKHNL8t4pNDMG2tHwMEapsV2lv+vUzVcYFjI+hV5xCDAejf607jyTCTp1iOJfX4T+iDFgngdYPctbnwpWV1d7gyveAX64mh/L0kFiO1ik1p098yItyj4fPQ6e0h bcarter@Bennys-MacBook-Pro.local
+ - fullname: elridge dmello
+   name: edmello
+   email: edmello@cognitivescale.com
+   enabled: 1
+   pubkeys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCkj5T1/uF+2cCxMY+vcfVayTW0m71SqjUYYz50qVh1pFH9Yb9SRFc30Pyt31sEa1jj1bWuXp0Ry1PWpgiy+XJr355KNm2dDDSCWbO/8yVVVSVfANeLYGp0L64oyc30/OdTPoAFvAv3xuy37KebCQzEB1BnDIvk/McGygCyzS1KzYKB1B6mzuokZV9XKegCF1ivyLoOCuODT6eb9UbFIkDVQUvXmXsGqdHBglUKz59+y2Cf/IR/sO7CKjtC44VQ9IfqNO0TOLrgpOB+DuwFnq4FngHmaa1mBDrIc4YyjcK+YBDpAtzVdDWUw6PdZeLHC+Q4BaKZBsnjbSaNM5BWvQmQYhESDlp+PH3LwHrlOpcey0KfITckN2mhxBb8ArhGMs3fDacHYSEq8CEAGYkCMOw1j1Dv/V/Obn+shl28NMZR7NI/Yo+p8mCo+jDT7O/5muuSsq9+VggWhYZu5HsT8AqSEkZ4uIkz1dQzFCnvgLW+EG7E6GM5donaofLaIea7FVvA8lKsjQT50HRSTElP4tEbyeYDGc1+BWVzu5eutQWvxCnYKmArD3n5wz63cwysl/9xNvQgfkjyjtU+A6U/CX9chLh49GIpOcz73ZgLZb0SeAisaEe1qwXlMgIKs+JlVMAfOusVqwskFOX8mIr4aZx9ieflh50gawLI+Ijs4L/jZQ== edmello@cognitivescale.com
+ - fullname: agrim asthana
+   name: aasthana
+   email: aasthana@cognitivescale.com
+   enabled: 1
+   pubkeys:     
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDGoiKOlaMX9TUUbMG5ilGTscDtY7Ff8UFR/GrEpOLYOFp91Myggwgjs8YHMCSaaof+x1w4ZBdpPt1/zBZ8BPF/x5ahJibir+U5ccFmvuKWIj36n0UnvXczWEvUn91JNwEPattLpm2ymgXpxOIEki/88D2aRLqpnAMXEKiGwPkuBdAWSHetz9JONNJmtwVf8MkZUv9HwE59lppwAdAAyQgc/BthFYLzHvkVBHU6NFuxGcWGERBuBYzSRw6gC/Uo324IalF72kHZG55MDzm8hli5wkxr0XFJ2G3N7nGxspPMSw2tg42aUM8g7LjqrtLTNMewYVX8iS6jucW+c+ST+sQr1bg30o0blOyNUc/dRhrSzRxcV95wZPMPBUjKqBYzCNTG1Zqua+8HdFgkNz2lITb8upDVZrIeA6345RVp7MwkcXnnflIOlzgWzvpxDUgeIUllxCrY4t9M4GJ+QfAznMVRUrHPE9PSfuprySDgJH1+4Oe1c1DJ7UJPTJiN7xyUtqMNZzwYCpr/lgdTr2i2nazQijs38/MHX6u+AbXgtF8IYrhlV552XME20wZb0LBaqMKPAxWPAjrnedP7UvMhesID4hm5GzQVlrhVohhpVdQaiVKDL7JsgVQCHxv+RuqahddTZOYEZOAw2Xt1yb+opHMny2dedE9ScgPbjY47M3gVvw== aasthana@cognitivescale.com
+ - fullname: ayan acharya
+   name: aacharya
+   email: aacharya@cognitivescale.com
+   enabled: 1
+   pubkeys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPGpcyqSBwDpClyXj1z7sDz4+Y8YsL+shqVmgsQbPF/64NwVG5lg9o+kQDmumHIYt0FmioFifETYqGWjjbHyRP4uKi8BnJ0nmXPM1hkREK2DwpvkvYr3U/lIEQD2/SUryrGKQNOWZqh3NuB2ImOM0M0wRMO8z4fl32lMUfD2iu699nvsPvb0cv54QvDmQE+HCN6IoIDeuaUUGajdlx80vRtEQxUj9RFiyPCue41pQsOxZCU6zkJqal6avYCenHq1qLXelOUrooMKEP3dFZF6Pnp6BrOgTRSWjkdOf++uT8VSHKwtu9OtkW2ZSYR1iBWS8gmA30CYBsB2VERNFyBV1/ ayanacharya@Ayans-MacBook-Pro-2.local
+ - fullname: michael dobson
+   name: mdobson
+   email: mdobson@cognitivescale.com
+   enabled: 1
+   pubkeys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDX564R2ybmlvDGVctpNXglHbbbsglFJZZw2VFGBQiV/vTkDrqwNQWCYEJiZwprrakRmO/kKgJ+C3cW7hEs/5o0JtwrhMAiwkgY/TaEBeGm21mREvb95T0WIUzl4McxzrKoJ/YmNUo6BST8TRRRMp2rjs0m6X5yfKTqw/r5e3RVPSAAW2QE2uGB+q1+JYJyTqv2H30babNG4AT7LtQ0y+W32IPTR2JXVmEfzgK0wd+c0Ks2o2EdZYkL1+ZaZQheyN7qZVc8l13IHx429xykzxfo42Qw2q5NR9ispH2R0oNEf1A1pg1GJcaYLQyjYMgMBJYKVgxr0wVI56QIS6ol5S9V michaeldobson@ip-192-168-1-97.ec2.internal
+

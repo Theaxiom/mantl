@@ -172,6 +172,7 @@ Before=local-fs.target {before}
 [Mount]
 What={what}
 Where={where}
+Options={options}
 Type={type}
 
 [Install]
@@ -202,12 +203,16 @@ def process_fs(sec, params):
     if params.has_option(sec, "mount"):
         print "--> Create mount for {}".format(dev)
         mount = params.get(sec, "mount")
+        if mount.find('-') != -1:
+            fail("Mount name {} cannot have '-' due to a frailty in systemd mount units".format(mount))
+    
         mountname = mount.lstrip("/").replace("/", "-")
         unit = "{}.mount".format(mountname)
         unitfile = os.path.join("/etc/systemd/system/", unit)
 
         required_by = safe_split(optional(params.get, sec, "required_by", ""))
         wanted_by = safe_split(optional(params.get, sec, "wanted_by", ""))
+        mount_options = safe_split(optional(params.get, sec, "mount_options", ""))
 
         if not os.path.exists(unitfile):
             with closing(open(unitfile, "w")) as f:
@@ -215,6 +220,7 @@ def process_fs(sec, params):
                 f.write(UNIT_TEMPLATE.format(
                     what=dev,
                     where=mount,
+                    options=":".join(mount_options),
                     type=fstype,
                     wanted_by=" ".join(wanted_by),
                     required_by=" ".join(required_by),
@@ -223,6 +229,12 @@ def process_fs(sec, params):
             print "--> Not writing {}, it already exists".format(unitfile)
         check_call(["systemctl", "enable", unit])
         check_call(["systemctl", "daemon-reload"])
+        post_mount_cmds = optional(params.get, sec, "post_mount_cmds", "")  
+        if post_mount_cmds:
+            for cmd in post_mount_cmds.split(';;'):
+                print "--> Running post mount command, {}".format(cmd)
+                check_call(safe_split(cmd))
+
     else:
         print "--> Not mounting {}".format(dev)
 

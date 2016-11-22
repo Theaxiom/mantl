@@ -1,3 +1,7 @@
 [group:mantl]
 name = {{ lvm_volume_group_name }}
 devices = {{ lvm_physical_device }} 
+
+[group:mongodb]
+name = {{ mongodb_lvm_volume_group_name }}
+devices = {{ mongodb_lvm_physical_device}}

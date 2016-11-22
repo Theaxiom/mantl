@@ -1,0 +1,10 @@
+# c12e_customize/main.yml
+
+- name: disable logstash service
+  shell: systemctl disable logstash
+
+- include: vault_policies.yml
+
+- include: vault_secrets.yml
+
+- inclucde: chronos_create_jobs.yml

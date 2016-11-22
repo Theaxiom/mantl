@@ -11,6 +11,7 @@
 # docs.mantl.io.
 - hosts: all
   sudo: yes
+  gather_facts: yes
   vars:
     # consul_acl_datacenter should be set to the datacenter you want to control
     # Consul ACLs. If you only have one datacenter, set it to that or remove
@@ -29,6 +30,8 @@
     - etcd
     - dnsmasq
     - wgregorian.sumocollector
+    - mongodb
+    - hardware
 # ROLES - after provisioning the software that's common to all hosts, we do
 # specialized hosts. This configuration has two major groups: control nodes and
 # worker nodes. We provision the worker nodes first so that we don't create any

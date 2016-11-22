@@ -1,4 +1,7 @@
 ---
+- include: uninstall_vault.yml
+  when: uninstall_vault | default('no') == 'yes'
+
 - name: install vault
   sudo: yes
   yum:

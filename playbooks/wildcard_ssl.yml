@@ -128,6 +128,8 @@
     mode: 0644
   with_fileglob: 
     - "{{ wildcard_certs_dir }}/public_certs/*"
+  tags:
+    - update_certs
 
 # This step may be un-necessary.  Determine minimal required.
 - name: copy public wildcard certs to /etc/pki/CA/
@@ -177,6 +179,29 @@
     mode: 0400
   with_fileglob:
     - "{{ wildcard_certs_dir }}/private_certs/*"
+  tags:
+    - update_certs
+
+# per david, apple doesn't let us use 2 certs.
+# - name: rename aps_development pem files
+#   shell: mv "{{ item.src }}" "{{ item.dest }}"
+#   with_items:
+#     - { src: /private_certs/aps_development.key.pem, dest: /private_certs/aps.key.pem }  
+#     - { src: /public_certs/aps_development.cert.pem, dest: /public_certs/aps.cert.pem }  
+#   when: deployment_id == "sihc"
+#   tags:
+#     - update_certs
+
+- name: remove aps_development pem files from pihc
+  file: 
+    dest: "{{ item }}"
+    state: absent
+  with_items:
+    - /private_certs/aps_development.key.pem
+    - /public_certs/aps_development.cert.pem
+  when: deployment_id == "pihc"
+  tags:
+    - update_certs
 
 - name: ensure ssl_services group exists
   group:

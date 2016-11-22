@@ -1,0 +1,26 @@
+# docker_install.yml
+
+# - set_fact:
+#     updated_sumologic_docker_options: "{{sumologic_docker_options}} -v /var/log/sa:/var/log/sa"
+#   when: sumologic_do_sysstat == "yes"
+#   tags:
+#     - sumologic
+#     - sumologic_docker
+
+# - debug: msg="{{updated_sumologic_docker_options}}"
+#   tags:
+#     - sumologic
+#     - sumologic_docker
+
+- name: run the sumo container
+  shell: docker run --rm -p 514:514 -p 514:514/udp --name=sumo-logic-collector 
+             -v /var/run/docker.sock:/var/run/docker.sock
+             -v /etc/sumo.conf:/etc/sumo.conf
+             -v /etc/sumologic-collector.json:/etc/sumo-sources.json
+             -v /var/log:/var/log
+             "{{updated_sumologic_docker_options | default(sumologic_docker_options) | default(omit)}}"
+             sumologic/collector:latest-syslog {{sumologic_collector_accessid}} {{sumologic_collector_accesskey}}
+  tags:
+    - sumologic
+    - sumologic_docker
+

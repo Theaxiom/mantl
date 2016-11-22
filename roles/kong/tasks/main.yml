@@ -1,0 +1,11 @@
+---
+# tasks file for kong
+
+- include: api.yml
+
+- include: plugin.yml
+
+- include: consumer.yml
+
+# install kong dashboard
+#docker run -d -p 8080:8080 pgbi/kong-dashboard

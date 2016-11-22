@@ -1,5 +1,7 @@
 ---
 
+sumologic_install_method: docker
+
 sumologic_force_restart: "no"
 # For RedHat only
 sumocollector_installer_rpm: "https://collectors.sumologic.com/rest/download/rpm/64"
@@ -20,12 +22,27 @@ sumologic_collector_clobber: ""
 sumologic_collector_source_template: "collector.json.j2"
 sumologic_collector_timezone: "UTC"
 sumologic_collector_force_timezone: "false"
+# collection of logs should be index-aware placing logs likely to be searched together
+# into the same index.
+# The category field below + partition rules determines the index
+# Suggested partition rules:
+# sumo_category_major -> cluster supporting rancher/mantl or single orchestration layer
+# sumo_category_minor -> rancher environment (default, beta, dev)
+# sumo_category_detail -> stack
+
+# In a multi-tenant a host can have services from many different stacks (but only one rancher environment)
+# One could imagine templating out many sources in /etc/sumologic-collector.json and filtering them.
+# sumologic_category_prefix: "{{sumologic_category_major}}/{{sumologic_category_minor}}/{{sumologic_category_detail}}"
+
 sumologic_collector_log_paths:
   common:
-    - name: "Sys Log"
-      path: "/var/log/messages"
-      use_multiline: true
-      category: "OS/Linux/Syslog"
+    - name: "syslog-collector-container-tcp"
+      sourceType: "Syslog"
+      port: 514
+      protocol: "TCP"
+      encoding: "UTF-8"
+      forceTimeZone: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Syslog"
       filters: [
         {
           filterType: "Exclude",
@@ -43,41 +60,94 @@ sumologic_collector_log_paths:
           "regexp": ".*etcd.*"
         }
       ]
+    - name: "syslog-collector-container-udp"
+      sourceType: "Syslog"
+      port: 514
+      protocol: "UDP"
+      encoding: "UTF-8"
+      forceTimeZone: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Syslog"
+      filters: [
+        {
+          filterType: "Exclude",
+          name: kubernetes,
+          regexp: .*kube.*
+        },
+        {
+          "filterType": "Exclude",
+          "name": "RPC request for DC",
+          "regexp": ".*RPC\\srequest\\sfor\\DC.*"
+        },
+        {
+          "filterType": "Exclude",
+          "name": "etcd",
+          "regexp": ".*etcd.*"
+        }
+      ]
+    # - name: "Sys Log"
+    #   path: "/var/log/messages"
+    #   multilineProcessingEnabled: true
+    #   category: "{{sumo_category_prefix | default(deployment_id)}}/OS/Syslog"
+    #   filters: [
+    #     {
+    #       filterType: "Exclude",
+    #       name: kubernetes,
+    #       regexp: .*kube.*
+    #     },
+    #     {
+    #       "filterType": "Exclude",
+    #       "name": "RPC request for DC",
+    #       "regexp": ".*RPC\\srequest\\sfor\\DC.*"
+    #     },
+    #     {
+    #       "filterType": "Exclude",
+    #       "name": "etcd",
+    #       "regexp": ".*etcd.*"
+    #     }
+    #   ]
+# filter exclude rules https://help.sumologic.com/Manage/Collectors_and_Sources/Processing_Rules/Include_and_Exclude_Rules
     - name: "docker stats"
-      category: "docker"
+      category: "{{sumo_category_prefix | default(deployment_id)}}/docker"
       multilineProcessingEnabled: true
       uri: "unix:///var/run/docker.sock"
-      specifiedContainers: []
       allContainers: true
       certPath: ""
       sourceType: "DockerStats"
       alive: true
-# filter exclude rules https://help.sumologic.com/Manage/Collectors_and_Sources/Processing_Rules/Include_and_Exclude_Rules
+# rate limiting docker stats https://community.sumologic.com/s/article/Rate-Limiting-Docker-Stats-Source
+      filters: [{
+      "filterType": "Include",
+      "name": "StatsRateLimiter",
+      "regexp": "\\{\\\"read\\\"\\s:\\s\\\"\\d{4}-\\d{2}-\\w{5}:\\d{2}:[0][0|1|2].*"
+    }]
     - name: "Access Log"
       path: "/var/log/audit/*"
-      use_multiline: false
-      category: "OS/Linux/Access"
+      multilineProcessingEnabled: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/OS/Access"
     - name: "Security Log"
       path: "/var/log/secure*"
-      use_multiline: false
-      category: "OS/Linux/Secure"
+      multilineProcessingEnabled: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/OS/Secure"
     - name: "SAR sysstat"
-      sourceType: LocalFile
+      sourceType: Script
       path: /var/log/sa/*
-      use_multiLine: false
-      category: Perf
+      multilineProcessingEnabled: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/OS/Perf"
+#####################################
+# HOST TYPE CUSTOMIZATIONS
+#####################################
   edge:
     - name: "Traefik logs"
       path: "/var/log/traefik/*.log*"
-      use_multiline: false
-      category: "Infra/traefik"
+      multilineProcessingEnabled: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/traefik"
   worker:
     - name: "mesos"
       path: "/var/log/mesos/*.log*"
-      use_multiline: false
-      category: "Infra/Mesos/agent"
+      multilineProcessingEnabled: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/Mesos/Agent"
   control:
     - name: "mesos"
       path: "/var/log/mesos/*.log*"
-      use_multiline: false
-      category: "Infra/Mesos/agent"
+      multilineProcessingEnabled: false
+      category: "{{sumo_category_prefix | default(deployment_id)}}/Infra/Mesos/Master"

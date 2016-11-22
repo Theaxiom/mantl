@@ -1,0 +1,8 @@
+# vault_policies.yml
+
+vault_policies:
+  - name: mongodb-s3-backup-restore-policy 
+  - policy: mongodb-s3-backup-restore-policy.json
+
+- name: write vault policies
+  shell: vault {{item}}

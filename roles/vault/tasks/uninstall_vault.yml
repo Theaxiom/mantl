@@ -1,0 +1,27 @@
+# uninstall_vault.yml
+
+- name: stop and disable vault
+  sudo: yes
+  service:
+    name: vault
+    enabled: no
+    state: stopped
+  tags:
+    - uninstall_vault
+
+- name: uninstall vault
+  sudo: yes
+  yum:
+    name: "{{ vault_package }}"
+    state: absent
+  tags:
+    - uninstall_vault
+
+- name: remove configuration for vault
+  sudo: yes
+  file:
+    dest: /etc/vault/vault.hcl
+    state: absent
+  tags:
+    - uninstall_vault
+
