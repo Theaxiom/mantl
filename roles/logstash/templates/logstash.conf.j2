@@ -49,6 +49,21 @@ filter {
   }
 }
 
+filter {
+  json {
+    source => "message"
+    target => "messageParsed"
+  }
+}
+
+{# filter {
+  if [type] == "syslog" {
+    mutate {
+    replace => { "message" => "messageParsed"  }
+  }
+ }
+} #}
+
 output {
 {% if logstash_output_elasticsearch is defined %}
   elasticsearch {

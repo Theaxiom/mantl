@@ -52,7 +52,7 @@
 
     - name: concatenate CA and wildcard.cert for traefik
       sudo: yes
-      shell: cat /public_certs/wildcard.c1.io.cert.pem /public_certs/geoTrust_CA_Chain.cert.pem  > /public_certs/wildcard-chain.c1.io.cert.pem
+      shell: cat {{ traefik_routed_cert_path }} {{ traefik_routed_CA_chain_path }}  > {{ traefik_routed_chain_path }}
 
     - name: concatenate private key with cert for mongo
       sudo: yes

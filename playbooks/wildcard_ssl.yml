@@ -202,7 +202,15 @@
     mode: 0440
     recurse: yes
 
-- name: copy wildcard private keys to /etc/pki/CA/
+- name: on all nodes make /private_certs 0551
+  sudo: yes
+  file:
+    state: directory
+    dest: "/private_certs"
+    mode: 0551
+    recurse: yes
+
+- name: copy wildcard private keys to /etc/pki/tls/private
   sudo: yes
   copy:
     src: "{{ item }}"
