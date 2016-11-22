@@ -208,7 +208,6 @@
     state: directory
     dest: "/private_certs"
     mode: 0551
-    recurse: yes
 
 - name: copy wildcard private keys to /etc/pki/tls/private
   sudo: yes

@@ -20,6 +20,7 @@ users:
    pubkeys:
     - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyy/y+lYY7IL44M+Nh5JJOK6MvbmdKAqg3yvEz6j3i1IK47FrhwmdAJEI22W23Y9XnYuijrDv0y7eL6RoGWQ+JfcY8q1ETHITn4cslz0r4Oh6af7UEepNoxyqNurciBlX6PZmtcBcJCTzNNrWP5Gakck3ZiyTbX5IikpMW0tVrWG0MmL4ZJAETwAl0pUxt19h1+TAuncRT6E8Mbhm6cTN0b0M9LJ8sW2RXwUcCjqDeTqu9PFhQ9JGffuvp3IfjSwMDMoQDDsqfwy99Tlm83oXhUxwZcuP2liP5ocZEgtZWdggZvHsS1vwe3WocdhGMIbvvT390JbI2OVWOWFzVeKpH kestenbroughton@kestens-MacBook-Pro.local
  - fullname: benny carter
+   name: bcarter
    enabled: 1
    email: bcarter@cognitivescale.com
    pubkeys:

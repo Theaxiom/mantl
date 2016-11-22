@@ -1,5 +1,5 @@
 [
-{% for host in groups[consul_servers_group] | intersect(groups[consul_dc_group] | default(groups['all'])) %}"{{ hostvars[host].private_ipv4 }}:8300"{% if not loop.last %}, 
+{% for host in groups[consul_servers_group] | intersect(groups[consul_dc_group] | default(groups['all']) | difference(['localhost'])) %}"{{ hostvars[host].private_ipv4 }}:8300"{% if not loop.last %}, 
 {% endif %}{% endfor %}
 
 ]

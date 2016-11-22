@@ -1,4 +1,17 @@
 ---
+- name: gather ec2_facts for marathon
+  ec2_facts:
+  tags:
+    - mesos
+
+- name: set private_ipv4 compatible with terraform.py inventory
+  sudo: yes
+  set_fact:
+    private_ipv4: "{{ ansible_ec2_local_ipv4 }}"
+  when: "{{ inventory_hostname != 'localhost' }}"
+  tags:
+    - mesos
+
 - name: install marathon package
   sudo: yes
   yum:

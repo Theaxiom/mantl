@@ -7,3 +7,23 @@
   kbroughton/feature/sleep_control                             3b600e9 not super well tested changes
   kbroughton/feature/terraforming                              847ec33 bugfix tfstate check
   kbroughton/feature/traefik-ssl                               b44f204 merge wildcards
+
+
+
+
+
+    modified:   mantl.yml
+    modified:   playbooks/c12e_customize.yml
+    modified:   users.yml
+
+    modified:   playbooks/aws/sleep_control.yml
+
+    modified:   playbooks/wildcard_ssl.yml
+
+    modified:   plugins/inventory/ec2.py
+
+    modified:   roles/common/tasks/main.yml
+    modified:   roles/consul/tasks/main.yml
+
+    modified:   roles/logstash/templates/logstash.conf.j2
+

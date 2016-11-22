@@ -1,0 +1,411 @@
+---
+
+# WARNING: This playbook should really not be run without elastic ips.  However, we can't make vars_prompt conditional.
+# Uncomment this block if you want to enable the protection
+
+# This version of sleep_control relies on ansible only (no terraform) and a 
+# static hosts file.
+# By default ansible ec2.py inventory only returns running instances 
+# You will need to modify ec2.ini as follows
+# all_instances = True
+
+# and set EC2_INI_PATH env var to find it.
+
+# This playbook requires ec2_tags['Name'] == inventory_hostname
+
+# Required vars
+# region 
+# vpc_id
+
+# Usage (example to put hosts to sleep )
+# ansible-playbook -i /path/to/hosts 
+#             playbooks/aws/sleep_control.yml  
+#             -e do_wake=no 
+#             -e override_tags=yes 
+#             -e do_restart_consul=no 
+
+  # hosts: localhost
+  # vars_prompt:
+  #   - name: confirm_reboot 
+  #     prompt: "Running reboot-hosts without elastic ips will likely break things.  Enter to continue.  Type no to abort"
+  #     default: "yes"
+  # tasks:
+  # - name: abort if not confirmed 
+  #   fail: msg="aborting as per request"
+  #   when: confirm_reboot != 'yes'
+
+# This playbook is intended to reduce costs and save energy by allowing mantl clusters to be put to sleep indefinitely or on a cron cycle.
+# It's useful for devs working on mantl who don't want to destroy a WIP cluster but won't be touching it while they sleep or over the 
+# weekend.  A stack with a few m4.xlarge's could cost 2k per month, so one could be saving upwards of $700 per month.  Although you still 
+# pay for eips, block storage etc, typically the running instance cost is 90% of the bill.
+
+# By default, we will leave the control nodes alone.  They are the central nervous system of the cluster.
+# This is similar to how humans sleep.  The workers (musculo skeletal system) and edge nodes (eyes, ears..)
+# shut down but the CNS stays working.  Over-ride with -e do_sleep_controllers=yes
+
+# This play is also useful for testing resilience of the cluster regularly and forces users to run stateless containers backed by proper 
+# distributed stores like cassandra or mongo.
+
+# We support two workflows.  One where a cron/chronos job runs this script occasionally (wip)
+# and puts servers to sleep or wakes them depneding on preset values.
+# The second case is to set a server to sleep/wake on demand.
+
+# You may use override_tags=yes or tag instances with tag name sleep_control and tag values in
+# ['dreamer', 'never','timed']
+# dreamer -> put to sleep when this playbook runs
+# never -> never put to sleep (allows switching default to dreamer)
+# timed -> requires sleep_time and wake_time in UTC 24 hr clock set in hostvars
+# handle with chronos cron job
+
+# Note, this is essentially the same as reboot-hosts.yml but is much more complicated because
+# if servers are shut down you cannot ssh to them.  You must communicate by running against
+# localhost and looping over a list of servers talking to the aws api.
+
+
+#############################################################
+# Group by instance_state before we jump in serial mode
+#############################################################
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: get ec2_remote_facts for servers in all states
+      ec2_remote_facts:
+        filters:
+          vpc-id: "{{vpc_id}}"
+        region: "{{ region }}"
+        ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+        ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+      register: register_ec2_remote_facts
+
+    - debug: msg="{{ register_ec2_remote_facts.instances }}"
+
+
+- hosts: all
+  gather_facts: no
+  tasks:
+    - set_fact: 
+       register_ec2_remote_facts: "{{ hostvars['localhost']['register_ec2_remote_facts'] }}"
+
+    - debug: msg="{{ inventory_hostname }}"
+
+    - debug: msg="{{ item['tags']['Name'] }}"
+      with_items: "{{ register_ec2_remote_facts['instances'] }}"
+      run_once: yes
+
+    - set_fact:
+        instance_state: "{{ item['state'] }}"
+      with_items: "{{ register_ec2_remote_facts['instances'] }}"
+      when: "{{ item['tags']['Name'] == inventory_hostname }}"
+
+    - name: group instances by instance state
+      group_by: 
+        key: "{{ instance_state }}"  
+
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: group instances by instance state
+      group_by: 
+        key: "{{ item.state }}"    
+      with_items: "{{ register_ec2_remote_facts.instances }}"
+
+    - debug: msg="{{groups}}"
+  
+# - hosts: localhost
+#   gather_facts: no
+#   tasks:
+#   - name: get the ec2_tags 
+#     local_action:
+#       module: ec2_tag
+#       resource: "{{ hostvars[item]['id'] }}" 
+#       state: list
+#       region: "{{ region }}"
+#       ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+#       ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+#     with_items: "{{ groups['all'] | list }}"
+#     register: register_ec2_tag
+#     run_once: yes  
+
+#  - debug: msg="{{register_ec2_tag}}"
+
+
+    - set_fact:
+        consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
+      run_once: yes
+
+
+###############################
+# Shutdown block
+###############################
+
+- hosts: running
+  serial: 1
+  gather_facts: yes
+  vars:
+    # Passing override_tags=yes allows forcing sleep/wake against their tags.
+    default_sleep_control: 'never'
+    override_tags: 'no'
+    # pass -e do_sleep=no to skip putting to sleep block
+    do_sleep: 'yes'
+    # pass -e do_wake=no to only put to sleep without waking
+    do_wake: 'yes'
+    # normally you don't want to shut down the controllers.  They are the Central Nervous System
+    do_sleep_controllers: 'no'
+
+  tasks:
+  - name: gather ec2 facts 
+    ec2_facts: 
+
+  - name: set instance_id fact 
+    set_fact: 
+      id: "{{ ansible_ec2_instance_id }}"
+    when: "{{ inventory_hostname != 'localhost' }}"
+     
+  - name: set private_ipv4 compatible with terraform.py inventory
+    set_fact:
+      private_ipv4: "{{ ansible_ec2_local_ipv4 }}"
+    when: "{{ inventory_hostname != 'localhost' }}"
+
+  - name: set consul maintenance enable
+    command: consul maint -enable -reason "{{ lookup('env', 'USER') }} initiated sleep"
+    register: register_consul_maint
+    when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and ( inventory_hostname not in groups['role=control'] )
+    failed_when: "{{ (register_consul_maint.rc != 0 ) and ( register_consul_maint.stdout.find('Error querying Consul agent') == -1 ) }}"
+    when: inventory_hostname not in ( groups['role=bastion'] | default([]) ) and ( inventory_hostname != 'localhost' )
+
+  - name: stop host on non-control hosts
+    local_action:
+      module: ec2 
+      instance_ids: "{{ id }}"
+      state: stopped
+      region: "{{ region }}"
+      ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+      ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+      wait: yes
+    when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and ( inventory_hostname not in (groups['role=control'] + ['localhost']) )
+
+  - name: optionally stop host on control hosts
+    local_action:
+      module: ec2 
+      instance_ids: "{{ id }}"
+      state: stopped
+      region: "{{ region }}"
+      ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+      ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+      wait: yes
+    when: ( ('aws_tag_sleep_control' in groups) and (inventory_hostname in groups['aws_tag_sleep_control=dreamer'] ) ) or ( override_tags != 'no' )   and ( do_sleep == 'yes' ) and (do_sleep_controllers == 'yes') and ( inventory_hostname != 'localhost')
+
+###############################
+# Startup block
+###############################
+
+# Looping against localhost is naturally serialized, just add pause if needed
+
+- hosts: localhost
+  gather_facts: no
+  vars:
+    do_wake: 'yes'
+    do_sleep: 'yes'
+    default_sleep_control: 'never'
+    override_tags: 'no'
+    do_restart_consul: 'no'
+    do_sleep_controllers: 'no'
+  tasks:
+
+  - set_fact:
+      consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
+    run_once: yes
+
+  - name: get ec2_remote_facts in startup block
+    ec2_remote_facts:
+      filters:
+        vpc-id: "{{vpc_id}}"
+      region: "{{ region }}"
+      ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+      ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+    register: register_ec2_remote_facts
+
+  - name: group instances by instance state in startup block
+    group_by: 
+      key: "{{ item['state'] }}"
+    with_items: "{{ register_ec2_remote_facts['instances'] }}" 
+
+  - name: start host for control nodes
+    local_action:
+      module: ec2 
+      instance_ids: "{{ item['id'] }}"
+      state: 'running'
+      region: "{{ region }}"
+      ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+      ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+      wait: yes
+    with_items: "{{ register_ec2_remote_facts['instances'] }}"
+    when: ( ('aws_tag_sleep_control' in groups) and ( item['tags']['Name'] in groups['aws_tag_sleep_control=dreamer'] )  or ( override_tags != 'no' ) ) and ( do_wake == 'yes' ) and ( item['tags']['Name'] in groups['role=control'] )
+
+  - name: start host for non-control nodes
+    local_action:
+      module: ec2 
+      instance_ids: "{{ item['id'] }}"
+      state: 'running'
+      region: "{{ region }}"
+      ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+      ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+      wait: yes
+    with_items: "{{ register_ec2_remote_facts['instances'] }}"
+    when: ( ('aws_tag_sleep_control' in groups) and ( item['tags']['Name'] in groups['aws_tag_sleep_control=dreamer'] )  or ( override_tags != 'no' ) ) and ( do_wake == 'yes' ) and ( item['tags']['Name'] not in groups['role=control'] )
+
+  - name: wait for host boot on tagged servers
+    local_action:
+      module: wait_for
+      host: "{{ item['private_ip_address'] }}"
+      port: 22
+      search_regex: OpenSSH
+      delay: 1
+      timeout: 300
+      state: started
+    with_items: "{{ register_ec2_remote_facts['instances'] }}"
+    when:  (do_wake == 'yes') and ((override_tags == 'yes') or and ('aws_tag_sleep_control' in groups) and ( item in groups['aws_tag_sleep_control=dreamer'] ) )
+
+  - name: wait for over-ridden host boot
+    local_action:
+      module: wait_for
+      host: "{{ hostvars[item]['private_ip_address'] }}"
+      port: 22
+      search_regex: OpenSSH
+      delay: 1
+      timeout: 300
+      state: started
+    with_items: "{{ register_ec2_remote_facts['instances'] }}"
+    when: ( override_tags != 'no' ) and ( do_wake == 'yes' ) and (inventory_hostname in "{{ consul_nodes | list }}")
+
+    ##########################################
+    # Startup block: clean up raft/peers.json
+    ##########################################
+
+# var needed for peers.json
+# hopefully this can be removed when mantl moves to ansible 2.0
+# exec_main flag https://github.com/ansible/proposals/pull/4
+  - include_vars: ../../roles/consul/defaults/main.yml
+
+# according to https://www.consul.io/docs/guides/outage.html
+# https://github.com/ansible/ansible/issues/10375
+# outage in depth https://sitano.github.io/2015/10/06/abt-consul-outage/
+
+
+  - name: stop consul 
+    shell: systemctl stop consul
+    become: yes
+    remote_user: "{{ ansible_ssh_user }}"
+    delegate_to: "{{ item }}"
+    with_items: "{{ groups['role=control'] | intersect(groups['running']) }}"
+    when: ( do_restart_consul == 'yes' ) or ( do_sleep_controllers == 'yes' )
+
+  - name: template raft/peers.json to replace null from graceful shutdown 
+    template: 
+      src: ../../roles/consul/templates/peers.json.j2
+      dest: /var/lib/consul/raft/peers.json
+    delegate_to: "{{ item }}"
+    with_items: "{{ groups['role=control'] | intersect(groups['running']) }}"
+    remote_user: "{{ ansible_ssh_user }}"
+    become: yes
+
+  - name: start consul 
+    shell: systemctl start consul
+    become: yes
+    delegate_to: "{{ item }}"
+    with_items: "{{ groups['role=control'] | intersect(groups['running']) }}"
+    remote_user: "{{ ansible_ssh_user }}"
+    when: ( do_restart_consul == 'yes' ) or ( do_sleep_controllers == 'yes' )
+
+###############################
+# Regroup running instances
+###############################
+
+- hosts: localhost
+# refresh terraform to get running instances
+  vars:
+    do_wake: 'yes'
+    do_sleep: 'yes'
+    default_sleep_control: 'never'
+    override_tags: 'no'
+  tasks:
+
+  # - name: refresh terraform after stopping
+  #   local_action: shell chdir=../../ pwd && terraform refresh -target=module.route53 -target=module.control-nodes -target=module.worker-nodes -target=module.edge-nodes
+  #   when: dynamic_inventory == 'terraform'
+
+  - set_fact:
+      consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
+
+  - name: get ec2_remote_facts in startup block
+    ec2_remote_facts:
+      filters:
+        vpc-id: "{{vpc_id}}"
+      region: "{{ region }}"
+      ec2_access_key: "{{ lookup('env','AWS_ACCESS_KEY') }}"
+      ec2_secret_key: "{{ lookup('env','AWS_SECRET_KEY') }}"
+    register: register_ec2_remote_facts
+
+  - name: group instances by instance state in startup block
+    group_by: 
+      key: "{{ item['state'] }}"
+    with_items: "{{ register_ec2_remote_facts['instances'] }}" 
+
+  # - name: create group of running instances after stopping
+  #   local_action:
+  #     module: group_by
+  #     key: "{{ hostvars[item]['instance_state'] }}"
+  #   with_items: "{{ consul_nodes }}"
+
+###############################
+# Disable maintenance mode on consul running instances
+###############################
+
+- hosts: running
+  serial: 1
+  vars:
+    do_wake: 'yes'
+    do_sleep: 'yes'
+    default_sleep_control: 'never'
+  pre_tasks:
+
+  - set_fact:
+      consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
+    run_once: yes
+
+  - name: wait for consul to listen
+    wait_for:
+      port: 8500
+    when: ( do_wake == 'yes' ) and ( inventory_hostname in "{{consul_nodes | list}}" )
+
+  - name: set consul maintenance disable
+    command: consul maint -disable
+    when: do_wake == 'yes' and ( inventory_hostname in "{{consul_nodes | list}}" )
+
+  - name: pause for rolling reboot
+    pause:
+      seconds: 3
+
+
+#################################
+# restart non-persistent services
+#################################
+
+  - name: reload nginx-mantlui
+    sudo: yes
+    command: systemctl restart nginx-mantlui
+    tags:
+      - mantlui
+    when: ( do_wake == 'yes' ) and ( inventory_hostname in groups['role=control'] )
+
+  - debug: 
+       msg: "Known issues: system services may not start 
+             cloud-init -> fix -> systemctl start cloud-init
+             fail2ban -> mkdir /var/run/fail2ban, systemctl start fail2ban"
+
+  - debug: msg="Now run ansible-playbook -e @security.yml mantl.yml --tags mantlui"  
+    run_once: yes
+# TODO Broken until this is resolved https://github.com/CiscoCloud/mantl/issues/1343#issuecomment-209117859
+  # roles:
+  #   - mantlui
+

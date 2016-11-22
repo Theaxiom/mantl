@@ -21,7 +21,12 @@
         - nano
         - telnet
 
-
+    - name: template rules.toml file
+      template:
+        src: "{{ traefik_rules_toml_path }}"
+        dest: "/etc/traefik/rules.toml"
+      when: inventory_hostname in groups['role=edge']
+    
     - name: make the destination directories
       file:
         state: directory
