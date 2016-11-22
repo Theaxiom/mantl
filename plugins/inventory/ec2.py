@@ -446,9 +446,11 @@ class Ec2Inventory(object):
         for k, v in instance.tags.iteritems():
 	    key2 = None
             for splitv in v.split(","):
+                if splitv == 'controller':
+                    splitv = 'control'
                 if k == 'role':
                     key = self.to_safe("%s" % splitv)
-		    key2 = self.to_safe(k + "=" + splitv)
+    		    key2 = self.to_safe(k + "=" + splitv)
                 elif k == 'galaxy':
                     key = self.to_safe("%s" % splitv)
                 elif k.startswith('c12e_'):

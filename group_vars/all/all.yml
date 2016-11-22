@@ -1,5 +1,3 @@
 # all.yml
 
 provider: aws
-
-mesos_hostname: "{{ inventory_hostname}}.node.consul"

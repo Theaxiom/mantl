@@ -122,6 +122,22 @@
   with_fileglob:
     - "{{ wildcard_certs_dir }}/public_certs/*"
 
+- name: copy wildcard private keys to /private_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/private_certs/{{ item | basename }}"
+    owner: root
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: on edge nodes make traefik owner of /private_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/tls/private/{{ item | basename }}"
+
 - name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
   sudo: yes
   copy:
@@ -138,9 +154,15 @@
     src: "{{ item }}"
     dest: "/private_certs/{{ item | basename }}"
     owner: root
+
+  file:
+    state: file
+    dest: "{{ item }}"
+    owner: traefik
     mode: 0400
   with_fileglob:
-    - "{{ wildcard_certs_dir }}/private_certs/*"
+    - "/private_certs/*"
+  when: inventory_hostname in groups['role=edge']
 
 - name: copy wildcard private keys to /etc/pki/tls/private
   sudo: yes
@@ -150,6 +172,17 @@
     mode: 0400
   with_fileglob:
     - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: on edge nodes make traefik owner of /private_certs
+  sudo: yes
+  file:
+    state: file
+    dest: "{{ item }}"
+    owner: traefik
+    mode: 0400
+  with_fileglob:
+    - "/private_certs/*"
+  when: inventory_hostname in groups['role=edge']
 
 - name: copy wildcard private keys to /etc/pki/CA/
   sudo: yes
