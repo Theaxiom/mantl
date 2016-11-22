@@ -8,8 +8,8 @@ consul_servers_group: role=control
 consul_log_level: "warn"
 consul_is_server: "{{ consul_servers_group in group_names }}"
 consul_advertise: "{{ private_ipv4 }}"
-consul_retry_join: "{% for host in groups[consul_servers_group] | intersect(groups[consul_dc_group]) %}\"{{ hostvars[host].private_ipv4 }}\"{% if not loop.last %}, {% endif %}{% endfor %}"
-consul_bootstrap_expect: "{{ groups[consul_servers_group] | intersect(groups[consul_dc_group]) | length }}"
+consul_retry_join: "{% for host in groups[consul_servers_group] | intersect(groups[consul_dc_group]  | default(groups['all']) ) %}\"{{ hostvars[host].private_ipv4 }}\"{% if not loop.last %}, {% endif %}{% endfor %}"
+consul_bootstrap_expect: "{{ groups[consul_servers_group] | intersect(groups[consul_dc_group]  | default(groups['all']) ) | length }}"
 consul_disable_remote_exec: yes
 consul_ca_file: ca.cert
 consul_cert_file: consul.cert

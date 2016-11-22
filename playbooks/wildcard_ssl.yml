@@ -10,72 +10,77 @@
     - /private_certs
     - /public_certs
 
-- name: copy certs to /public_certs
+- name: copy CA cert into place
   sudo: yes
   copy:
     src: "{{ item.src }}"
-    dest: "/public_certs/{{ item.dest }}"
-    owner: root
-  with_items: 
-    - { src: "ssl/public_certs/wildcard.c1.io.intermediate.cert.pem", dest: "ca.cert.pem" }
-    - { src: "ssl/public_certs/wildcard.c1.io.cert.pem", dest: "container.cert.pem" }
-  when: use_wildcard_certs == 'yes'
-
-- name: copy ca cert to /public_certs
-  sudo: yes
-  copy:
-    src: "{{ item.src }}"
-    dest: "/public_certs/{{ item.dest }}"
+    dest: "{{ item.dest }}"
     owner: root
   with_items:
-    - { src: "ssl/cacert.pem", dest: "mantl.ca.cert.pem" }
+    - src: ../ssl/cacert.pem
+      dest: /public_certs/ca.cert.pem
 
-- name: copy private keys and concatenated certs to /private_certs
+- name: copy container keys and certs into place
   sudo: yes
-  copy:
-    src: "{{ item.src }}"
-    dest: "/private_certs/{{ item.dest }}"
-    owner: root
+  shell: cp "{{ item.src }}" "{{ item.dest }}"
   with_items:
-    - { src: "ssl/private_certs/wildcard.c1.io.key.pem", dest: "container.key.pem" }
-  when: use_wildcard_certs == 'yes'
+    - src: /etc/pki/mantl/cert
+      dest: /public_certs/container.cert.pem
+    - src: /etc/pki/mantl/key
+      dest: /private_certs/container.key.pem
 
-- name: deploy root ca
-  sudo: yes
-  copy:
-    src: "{{ item.src }}"
-    dest: "/etc/pki/ca-trust/source/anchors/{{ item.dest }}"
-    owner: root
-  with_items:
-    - { src: "ssl/cacert.pem", dest: "ca.cert.pem" }
-  notify:
-    - update-ca-trust
-
-- name: deploy root ca
+- name: copy public wildcard certs to /public_certs
   sudo: yes
   copy:
     src: "{{ item }}"
-    dest: "/etc/pki/ca-trust/source/anchors/{{ item }}"
+    dest: "/public_certs/{{ item | basename }}"
     owner: root
-  with_file_glob:
-    "ssl/public_certs/*"
-  notify:
-    - update-ca-trust
-  when: use_wildcard_certs == 'yes'
+    mode: 0644
+  with_fileglob: 
+    - "{{ wildcard_certs_dir }}/public_certs/*"
 
-- name: concatenate private key with cert for mongo
+- name: copy public wildcard certs to /etc/pki/CA/
   sudo: yes
-  shell: cat /private_certs/container.key.pem /public_certs/container.cert.pem > /private_certs/mongo.container.key.pem
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/CA/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
 
-- name: copy the wildcard ca-chain into /public_certs  
+- name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
   sudo: yes
-  copy: 
-    src: "ssl/public_certs/geoTrust_CA_Chain.cert.pem"
-    dest: /public_certs/ca-chain.cert.pem
-  notify:
-    - update-ca-trust
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/ca-trust/source/anchors/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
 
-- name: place a /root/keyfile on worker nodes for mongo
+- name: copy wildcard private keys to /private_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/private_certs/{{ item | basename }}"
+    owner: root
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: on edge nodes make traefik owner of /private_certs
+  sudo: yes
+  file:
+    state: file
+    dest: "{{ item }}"
+    owner: traefik
+    mode: 0400
+  with_fileglob:
+    - "/private_certs/*"
+  when: inventory_hostname in groups['role=edge']
+
+- name: copy wildcard private keys to /etc/pki/tls/private
   sudo: yes
   file: 
     dest: /root/keyfile

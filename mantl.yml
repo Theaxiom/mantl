@@ -27,7 +27,6 @@
     - consul
     - etcd
     - dnsmasq
-    - manage_users
 
 # ROLES - after provisioning the software that's common to all hosts, we do
 # specialized hosts. This configuration has two major groups: control nodes and

@@ -11,6 +11,10 @@
   tags:
     - consul
     - bootstrap
+   
+- set_fact:
+   private_ipv4: "{{ hostvars[inventory_hostname]['ec2_private_ip_address'] }}"
+   when: provider == 'aws'
 
 - name: add consul user to tls group
   sudo: yes

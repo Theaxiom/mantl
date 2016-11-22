@@ -54,7 +54,6 @@ resource "aws_elb" "mantl-elb" {
 
   tags {
     Name = "${var.short_name}-elb"
-    deployment_id_tag = "${var.deployment_id_tag}"
   }
 }
 

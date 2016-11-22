@@ -7,6 +7,10 @@
     wildcard_certs_dir: "{{mantl_config_dir}}/c1.io.certs"
     # a directory where you keep configuration of mantl projects
     use_wildcard_certs: "yes"
+    wildcard_keys: 
+      - wildcard.c1.io.key.pem
+    wildcard_certs:
+      - wildcard.c1.io.cert.pem
   tasks:
     - debug: msg="{{mantl_config_dir}}"
 
