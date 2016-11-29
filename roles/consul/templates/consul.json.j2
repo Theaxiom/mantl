@@ -13,6 +13,9 @@
 {% if consul_gossip_key is defined %}
   "encrypt": "{{ consul_gossip_key }}",
 {% endif %}
+{% if dogstatsd_addr is defined %}
+  "telemetry": { "dogstatsd_addr": "{{ dogstatsd_addr }}" },
+{% endif %}
   "ca_file": "/etc/pki/CA/ca.cert",
   "cert_file": "/etc/pki/mantl/cert",
   "key_file": "/etc/pki/mantl/key",
