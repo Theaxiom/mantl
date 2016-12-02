@@ -3,3 +3,4 @@ use_host_domain: false
 host_domain: novalocal
 selinux_policy: targeted
 selinux_state: permissive
+logstash_service_name: logstash.service.consul:514
