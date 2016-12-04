@@ -1,0 +1,10 @@
+---
+- name: Add remote host in rsyslog.conf
+  become: yes
+  lineinfile:
+    dest: /etc/rsyslog.conf
+    line: "*.* @@{{ logstash_service_name }}"
+    insertbefore: '^# ### end of the forwarding rule ###'
+    state: present
+  notify:
+      - restart rsyslog

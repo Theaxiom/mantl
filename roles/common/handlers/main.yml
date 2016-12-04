@@ -2,3 +2,7 @@
 - name: restart fail2ban
   sudo: yes
   command: systemctl restart fail2ban
+
+- name: restart rsyslog
+  become: yes
+  command: systemctl restart rsyslog
