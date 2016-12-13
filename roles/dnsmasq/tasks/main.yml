@@ -1,10 +1,8 @@
 ---
 - name: download custom mantl-dns rpm
-  s3:
-    bucket: ds-site-static-assets
-    object: /systems/mantl-dns-1.1.0-custombuild-ds.centos.x86_64.rpm
-    dest: /tmp/systems/mantl-dns-1.1.0-custombuild-ds.centos.x86_64.rpm
-    mode: get
+  get_url:
+    url: http://ds-site-static-assets.s3.amazonaws.com/systems/mantl-dns-1.1.0-custombuild-ds.centos.x86_64.rpm  
+    dest: /tmp/mantl-dns-1.1.0-custombuild-ds.centos.x86_64.rpm
   tags:
     - dnsmasq
 
