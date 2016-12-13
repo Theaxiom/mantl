@@ -1,8 +1,15 @@
 ---
+- name: download custom mantl-dns rpm
+  get_url:
+    url: http://ds-site-static-assets.s3.amazonaws.com/systems/mantl-dns-1.1.0-6.centos.x86_64.rpm  
+    dest: /tmp/mantl-dns-1.1.0-6.centos.x86_64.rpm
+  tags:
+    - dnsmasq
+
 - name: install mantl-dns
-  sudo: yes
+  become: yes
   yum:
-    name: "mantl-dns-{{ mantl_dns_version }}"
+    name: /tmp/mantl-dns-1.1.0-6.centos.x86_64.rpm
     state: installed
   tags:
     - dnsmasq
