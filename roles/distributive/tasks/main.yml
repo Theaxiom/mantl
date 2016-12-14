@@ -25,6 +25,9 @@
     - "{{ distributive_package }}"
     - "distributive-{{ current_role }}-{{ checklist_versions[current_role] }}"
 
+- name: do fast fix for python2-pip package name change
+  shell: "sed -i -e 's/python-pip/python2-pip/g' /etc/distributive.d/distributive-common.json"
+
 - name: create consul configuration directory
   become: yes
   file:
