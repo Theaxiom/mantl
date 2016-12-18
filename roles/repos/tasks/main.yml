@@ -8,6 +8,16 @@
   tags:
     - bootstrap
 
+- name: install yum repo for kernel upgrade
+  become: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/yum.repos.d/{{ item }}"
+  with_items:
+    - elrepo.repo
+  tags:
+    - kernel
+
 - name: enable templated yum repos
   sudo: yes
   template:
