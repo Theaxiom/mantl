@@ -8,6 +8,7 @@
   tags:
     - docker
     - disk
+    - overlay2
 
 - name: systemd drop-in for storage options
   sudo: yes
@@ -20,6 +21,7 @@
     - reload systemd
   tags:
     - docker
+    - overlay2
 
 - name: process with mantl storage setup
   sudo: yes

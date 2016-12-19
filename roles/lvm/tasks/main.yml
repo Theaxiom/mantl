@@ -6,3 +6,4 @@
   set_fact:  volume_group_name="{{ lvm_volume_group_name }}"
   tags:
     - lvm
+    - overlay2
