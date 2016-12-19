@@ -19,6 +19,7 @@
     - 14-storage-options.conf
   notify:
     - reload systemd
+    - reload docker
   tags:
     - docker
     - overlay2
