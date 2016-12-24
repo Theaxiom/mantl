@@ -290,6 +290,12 @@ docker_registry_opts.add_argument(
     help='the default docker registry url',
     dest='default_registry_url',
     default='https://index.docker.io/v1/')
+docker_registry_opts.add_argument(
+    '--email',
+    type=str,
+    help='the default docker login email',
+    dest='docker_email',
+    default='admin@datascience.com')
 
 BASE = posixpath.abspath(posixpath.dirname(__file__)).replace("\\", "/")
 SECURITY_FILE = posixpath.join(BASE, 'security.yml')
@@ -510,7 +516,7 @@ class Postgresql(Component):
     def password(self):
         "dsadmin password"
         with self.modify_security() as config:
-            if 'postgresql_admin_password' not in config or self.args.change_admin_password:
+            if 'postgres_password' not in config or self.args.change_admin_password:
                 config['postgres_password'] = self.randpass()
                 print('set postgresql admin password')
             else:
