@@ -136,7 +136,7 @@ resource "aws_security_group" "edge" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress { # HTTPS world
+  ingress { # HTTP world
     from_port = 80
     to_port = 80
     protocol = "tcp"
