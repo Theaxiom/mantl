@@ -1,4 +1,14 @@
 ---
+- name: install yum repo for kernel upgrade
+  become: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/yum.repos.d/{{ item }}"
+  with_items:
+    - elrepo.repo
+  tags:
+    - kernel
+
 - name: check current kernel release
   changed_when: no
   command: uname -r
