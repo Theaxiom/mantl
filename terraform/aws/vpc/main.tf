@@ -59,12 +59,6 @@ resource "aws_main_route_table_association" "main" {
   route_table_id = "${aws_route_table.main.id}"
 }
 
-resource "aws_route_table_association" "main" {
-  count = "${length(split(",", var.availability_zones))}"
-  subnet_id = "${element(aws_subnet.main.*.id, count.index)}"
-  route_table_id = "${aws_route_table.main.id}"
-}
-
 output "availability_zones" {
   value = "${join(",",aws_subnet.main.*.availability_zone)}"
 }
