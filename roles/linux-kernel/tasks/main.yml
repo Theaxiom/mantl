@@ -1,0 +1,43 @@
+---
+- name: install yum repo for kernel upgrade
+  become: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/yum.repos.d/{{ item }}"
+  with_items:
+    - elrepo.repo
+  tags:
+    - kernel
+
+- name: check current kernel release
+  changed_when: no
+  command: uname -r
+  register: kernel_release
+  tags:
+    - kernel
+
+- name: install linux kernel 4.9
+  become: yes
+  when: "'3.10.0' in kernel_release.stdout"
+  yum:
+    name: kernel-ml-4.9.0-1.el7.elrepo.x86_64
+    enablerepo: elrepo
+    state: present
+  tags:
+    - kernel
+
+- name: check current default boot kernel
+  become: yes
+  changed_when: no
+  command: grub2-editenv list
+  register: default_kernel
+  tags:
+    - kernel
+
+- name: make kernel 4.9 as default boot kernel
+  become: yes
+  when: "'3.10.0' in default_kernel.stdout"
+  command: grub2-set-default 0
+  tags:
+    - kernel
+

@@ -1,0 +1,5 @@
+[elrepo]
+name=elrepo
+baseurl=https://elrepo.org/linux/kernel/el7/x86_64
+gpgcheck=0
+enabled=0

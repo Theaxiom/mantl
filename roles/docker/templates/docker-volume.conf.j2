@@ -12,7 +12,7 @@ required_by = docker-storage-setup.service docker.service
 
 [write:config]
 file = /etc/sysconfig/mantl-storage
-content = MANTL_STORAGE_OPTIONS=--storage-driver {{ docker_storage_driver }} 
+content = MANTL_STORAGE_OPTIONS=--storage-driver overlay2 
 {% endif %}
 {%if docker_lvm_backed|bool and docker_storage_driver == "devicemapper" %}
 [thin:docker]
