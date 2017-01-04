@@ -45,6 +45,9 @@ resource "aws_instance" "instance" {
     volume_type = "${var.ebs_volume_type}"
   }
 
+  lifecycle {
+    ignore_changes = [ "ami" ]
+  }
 
   tags {
     Name = "${var.short_name}-${var.role}-${format(var.count_format, count.index+1)}"
