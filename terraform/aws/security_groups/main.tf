@@ -99,6 +99,31 @@ resource "aws_security_group" "ui" {
   }
 }
 
+resource "aws_security_group" "elb" {
+  name = "${var.short_name}-elb"
+  description = "Allow inbound traffic for elb"
+  vpc_id = "${var.vpc_id}"
+
+  tags {
+    KubernetesCluster = "${var.short_name}"
+  }
+
+  ingress { #HTTP world
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress { #HTTPS world
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+}
+
 resource "aws_security_group" "edge" {
   name = "${var.short_name}-edge"
   description = "Allow inbound traffic for edge routing"
@@ -133,14 +158,14 @@ resource "aws_security_group" "edge" {
     from_port = 443
     to_port = 443
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = ["${aws_security_group.elb.id}"]
   }
 
   ingress { # HTTP world
     from_port = 80
     to_port = 80
     protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = ["${aws_security_group.elb.id}"]
   }
 }
 
@@ -218,4 +243,8 @@ output "ui_security_group" {
 
 output "worker_security_group" {
   value = "${aws_security_group.worker.id}"
+}
+
+output "elb_security_group" {
+  value = "${aws_security_group.elb.id}"
 }
