@@ -278,6 +278,24 @@ docker_registry_opts.add_argument(
     help='add credentials for a private Docker registry',
     dest='do_private_docker_registry',
     default=False)
+docker_registry_opts.add_argument(
+    '--multiple-registries',
+    type=ImplicitBool.parse_opt,
+    help='use more than default docker hub',
+    dest='multiple_registries',
+    default=False)
+docker_registry_opts.add_argument(
+    '--default-registry-url',
+    type=str,
+    help='the default docker registry url',
+    dest='default_registry_url',
+    default='https://index.docker.io/v1/')
+docker_registry_opts.add_argument(
+    '--email',
+    type=str,
+    help='the default docker login email',
+    dest='docker_email',
+    default='admin@datascience.com')
 
 BASE = posixpath.abspath(posixpath.dirname(__file__)).replace("\\", "/")
 SECURITY_FILE = posixpath.join(BASE, 'security.yml')
@@ -486,12 +504,23 @@ class Nginx(Component):
         "admin password"
         with self.modify_security() as config:
             if 'nginx_admin_password' not in config or self.args.change_admin_password:
-                config['nginx_admin_password'] = self.ask_pass(
-                    prompt='Admin Password: ',
-                    purpose='admin', )
+                config['nginx_admin_password'] = self.randpass()
                 print('set nginx admin password')
             else:
                 print('nginx admin password already set')
+
+class Postgresql(Component):
+    def check(self):
+        return [self.password]
+
+    def password(self):
+        "dsadmin password"
+        with self.modify_security() as config:
+            if 'postgres_password' not in config or self.args.change_admin_password:
+                config['postgres_password'] = self.randpass()
+                print('set postgresql admin password')
+            else:
+                print('postgresql admin password already set')
 
 
 class Consul(Component):
@@ -575,9 +604,7 @@ class Marathon(Component):
         with self.modify_security() as config:
             if 'marathon_http_credentials' not in config or self.args.change_admin_password:
                 config['marathon_http_credentials'] = 'admin:{}'.format(
-                    self.ask_pass(
-                        prompt='Admin Password: ',
-                        purpose='admin', ))
+                    self.randpass())
                 print('set marathon http credentials')
             else:
                 print('marathon http credentials already set')
@@ -635,9 +662,7 @@ class Chronos(Component):
         with self.modify_security() as config:
             if 'chronos_http_credentials' not in config or self.args.change_admin_password:
                 config['chronos_http_credentials'] = 'admin:{}'.format(
-                    self.ask_pass(
-                        prompt='Admin Password: ',
-                        purpose='admin', ))
+                    self.randpass())
                 print('set chronos http credentials')
             else:
                 print('chronos http credentials already set')
@@ -689,34 +714,38 @@ class DockerRegistry(Component):
                     more_registries = True
                     registries = []
                     while more_registries:
-                        registry_config = {}
-                        creds = '{}:{}'.format(
-                            self.ask_string(
-                                prompt='Docker registry username: '),
+                        user = os.environ.get('DOCKER_USERNAME')
+                        if not user:
+                            user = self.ask_string(
+                                prompt='Docker registry username: ')
+                        password = os.environ.get('DOCKER_PASSWORD')
+                        if not password:
                             self.ask_pass(
-                                prompt='Docker registry password: '))
+                                prompt='Docker registry password: ')
+                        email = os.environ.get('DOCKER_EMAIL')
+                        if not email:
+                            email = 'admin@datascience.com'
+                            
+
+                        registry_config = {}
+                        creds = '{}:{}'.format(user, password)
 
                         registry_config[
                             'docker_registry_creds'] = base64.b64encode(creds)
 
                         registry_config[
-                            'docker_registry_email'] = self.ask_string(
-                                prompt='Docker registry e-mail: ')
+                            'docker_registry_email'] = email
 
-                        default_url = 'https://index.docker.io/v1/'
                         registry_config[
-                            'docker_registry_url'] = self.ask_string(
-                                prompt=
-                                'Docker registry URL (default is {}): '.format(
-                                    default_url))
-                        if registry_config['docker_registry_url'] == '':
-                            registry_config[
-                                'docker_registry_url'] = default_url
-
+                            'docker_registry_url'] = self.args.default_registry_url
+                        
                         registries.append(registry_config)
 
-                        more_registries = self.ask_boolean(
-                            "Are there more Docker registries? (y/N) ", False)
+                        if self.args.multiple_registries:
+                          more_registries = self.ask_boolean(
+                              "Are there more Docker registries? (y/N) ", False)
+                        else:
+                          more_registries = False
                     config['docker_registries'] = registries
                     print('set docker registry credentials')
                 else:
