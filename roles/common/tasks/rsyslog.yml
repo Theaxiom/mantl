@@ -1,10 +1,9 @@
 ---
-- name: Add remote host in rsyslog.conf
+- name: Add extra log file to be included in rsyslog
   become: yes
-  lineinfile:
+  template:
+    src: rsyslog.conf.j2
     dest: /etc/rsyslog.conf
-    line: "*.* @@{{ logstash_service_name }}"
-    insertbefore: '^# ### end of the forwarding rule ###'
-    state: present
+    mode: 0644
   notify:
-      - restart rsyslog
+    - restart rsyslog
