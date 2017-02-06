@@ -1,0 +1,235 @@
+---
+# defaults file for kong
+
+
+kong_apis:
+  - name: "mockbin-{{ client }}-{{ env }}"
+    upstream_url: "http://mockbin.com"
+    request_host: "mockbin.com"   
+    request_path: "/mockbin-{{ client }}-{{ env }}"   
+    strip_request_path: yes
+    acl_whitelist_groups: all
+  - name: "iHealth-{{ client }}-{{ env }}"
+    upstream_url: "iHealth-{{ client }}-{{ env }}.{{ traefik_marathon_domain }}"
+    request_host: "iHealth-{{ client }}-{{ env }}.service.consul"   
+    request_path: "/iHealth-{{ client }}-{{ env }}"   
+    strip_request_path: yes
+    acl_whitelist_groups: [ qa, admin, developer ]
+  - name: "fitbit-{{ client }}-{{ env }}"
+    upstream_url: "iHealth-{{ client }}-{{ env }}.{{ traefik_marathon_domain }}"
+    request_host: "iHealth-{{ client }}-{{ env }}.service.consul"   
+    request_path: "/iHealth-{{ client }}-{{ env }}"   
+    strip_request_path: yes
+    acl_whitelist_groups: [ qa, admin, developer ]
+  - name: "mongodb"
+    upstream_url: "iHealth-{{ client }}-{{ env }}.{{ traefik_marathon_domain }}"
+    request_host: "iHealth-{{ client }}-{{ env }}.service.consul"   
+    request_path: "/iHealth-{{ client }}-{{ env }}"   
+    strip_request_path: yes
+    acl_whitelist_groups: [ qa, admin, developer ]
+  - name: "rabbitmq"
+    upstream_url: "iHealth-{{ client }}.{{ traefik_marathon_domain }}"
+    request_host: "iHealth-{{ client }}.service.consul"   
+    request_path: "/iHealth-{{ client }}"   
+    strip_request_path: yes
+    acl_whitelist_groups: [ qa, admin, developer,  ]
+
+
+# api plugins configured per api 
+# api plugins configured per consumer per api 
+# api plugins configured per acl_group per api 
+
+kong_cs_consumers:
+  - username: kbroughton
+    plugins:
+      acl_groups: 
+      - admin
+      rate_limiting:
+        config_minute: 5
+  - username: daldridge
+    plugins:
+      acl_groups: 
+      - developer
+      rate_limiting:
+        config_minute: 5
+  - username: dmorris
+    plugins:
+      acl_groups: 
+      - qa
+      rate_limiting:
+        config_minute: 25
+  - username: clayton
+    plugins:
+      acl_groups: 
+      - bdo
+      rate_limiting:
+        config_minute: 5
+
+
+kong_service_consumers:
+  - username: rabbitmq_to_mongodb
+    plugins:
+      acl_groups: 
+      - rabbitmq
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: iHealth_to_rabbitmq
+    plugins:
+      acl_groups: 
+      - iHealth
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: fitbit_to_rabbitmq
+    plugins:
+      acl_groups: 
+      - fitbit
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: care_concierge_to_mongodb
+    plugins:
+      acl_groups: 
+      - care_concierge
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: care_concierge_to_rabbitmq
+    plugins:
+      acl_groups: 
+      - care_concierge
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: care_advisor_to_mongodb
+    plugins:
+      acl_groups: 
+      - care_advisor
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: care_advisor_to_rabbitmq
+    plugins:
+      acl_groups: 
+      - care_advisor
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: care_concierge_to_care_advisor
+    plugins:
+      acl_groups: 
+      - care_concierge
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+  - username: care_advisor_to_care_concierge
+    plugins:
+      acl_groups: 
+      - care_advisor
+      rate_limiting:
+        config_minute: "{{ rate_limiting_service_default }}"
+
+
+rate_limiting_human_default: 5
+rate_limiting_service_default: 50000
+
+kong_patient_consumers: []
+kong_case_manager_consumers: []
+
+kong_test_consumers:
+  - test_low_limit
+    groups: 
+      - readwrite
+  - test_no_limit
+    groups: 
+      - readwrite
+  - test_readonly
+    groups: 
+      - readonly
+  - test_writeonly
+    groups: 
+      - writeonly
+  - test_readwrite
+    groups: 
+      - readwrite
+
+kong_consumers: "{{ kong_cs_consumers }} + {{ kong_test_consumers }} + {{ kong_patient_consumers }} + {{ kong_case_manager_consumers }}"
+
+kong_consumer_groups:
+  - patient
+  - case_manager
+  - qa
+  - admin
+  - developer
+  - bdo
+  - readonly
+  - writeonly
+  - readwrite
+
+
+kong_api_plugin_consumers:
+  - api: mockbin
+    plugin: key-auth acl rate-limit
+    consumer: 
+  - api: iHealth-{{ client }}-{{ env }}
+
+
+kong_plugins:
+  - api: mockbin
+    plugins: 
+     - key-auth
+     - rate-limit
+     - acl
+
+#############################
+# Mongodb / Kong interface
+#############################
+# Mongodb has extensive RBAC functionality
+# Kong is http(s) only but we could use 
+# https://docs.mongodb.org/manual/core/security-built-in-roles/
+# ansible has a mongodb_user module http://docs.ansible.com/ansible/mongodb_user_module.html
+
+
+- mongodb_user:
+    login_user: root
+    login_password: root_password
+    database: admin
+    user: oplog_reader
+    password: oplog_reader_password
+    state: present
+    replica_set: belcher
+    roles:
+     - { db: "local"  , role: "read" }
+
+envs: [ dev, prod ]
+
+mongodb_per_db_roles:
+  - db: "{{ client }}-{{ env }}-read"
+    role: "read"
+  - db: "{{ client }}-{{ env }}-readWrite"
+    role: "readWrite"
+  - db: "{{ client }}-{{ env }}-dbAdmin"
+    role: "dbAdmin"
+  - db: "{{ client }}-{{ env }}-userAdmin"
+    role: "userAdmin"
+
+mongodb_service_users:
+  - mongo_backup_user
+  - mongo_restore_user
+  - ml_read_user
+  - ml_write_user
+  - ml_readwrite_user
+  - iHealth_user
+  - fitbit_user
+  - rabbit_user
+
+# people who might access the db independently/directly via mongoexpress or enterprise
+mongodb_internal_users: 
+  - username: kbroughton
+    roles: dbAdminAnyDatabase
+  - username: daldridge
+    roles: readAnyDatabase 
+  - username: d
+
+  - username: clayton
+
+# mongodb_internal_roles:
+# 'read', 'readWrite', 'dbAdmin', 'userAdmin', 'clusterAdmin', 'readAnyDatabase', 'readWriteAnyDatabase', 'userAdminAnyDatabase', 'dbAdminAnyDatabase'
+# collection level access control
+# privileges: [
+#   { resource: { db: "products", collection: "inventory" }, actions: [ "find", "update", "insert" ] },
+#   { resource: { db: "products", collection: "orders" },  actions: [ "find" ] }
+# ]

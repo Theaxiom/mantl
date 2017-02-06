@@ -1,4 +1,8 @@
 ---
+
+- include: clean-mesos.yml
+  when: do_clean_mesos is defined
+  
 - name: install mesos packages
   sudo: yes
   yum:
@@ -34,6 +38,21 @@
     - mesos
 
 - meta: flush_handlers
+
+- name: gather ec2_facts for mesos
+  ec2_facts:
+  tags:
+    - mesos
+    - security_rotation
+
+- name: set private_ipv4 compatible with terraform.py inventory
+  sudo: yes
+  set_fact:
+    private_ipv4: "{{ ansible_ec2_local_ipv4 }}"
+  when: "{{ inventory_hostname != 'localhost' }}"
+  tags:
+    - mesos
+    - security_rotation
 
 - include: leader.yml
   when: mesos_mode == "leader" or mesos_mode == "mixed"

@@ -1,0 +1,24 @@
+{
+  "api.version": "v1",
+  "source": {
+    "name":"SAR-sysstat",
+    "description":"Test",
+    "automaticDateParsing":true,
+    "multilineProcessingEnabled":true,
+    "useAutolineMatching":false,
+    "manualPrefixRegexp": "^\\{\\\"sysstat\\\":.*",
+    "forceTimeZone":false,
+    "filters":[],
+    "cutoffTimestamp":0,
+    "encoding":"UTF-8",
+    "file":"/etc/sumo/sumo-perf-script.sh",
+    "script":null,
+    "cronExpression":"0/10 * * * * ? *",
+    "timeout":300000,
+    "workingDir":"",
+    "commands":["/bin/sh"],
+    "extension":null,
+    "sourceType":"Script",
+    "category":"{{ deployment_id }}/os/perf"
+  }
+}

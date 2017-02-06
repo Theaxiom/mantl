@@ -29,6 +29,7 @@
     - restart mesos leader
   tags:
     - mesos
+    - security_rotation
 
 - name: write leader credentials
   sudo: yes
@@ -41,6 +42,7 @@
     - restart mesos leader
   tags:
     - mesos
+    - security_rotation
 
 - name: delete leader credentials
   sudo: yes
@@ -50,6 +52,7 @@
     state: absent
   tags:
     - mesos
+    - security_rotation
 
 - name: wait for zookeeper service to be registered
   wait_for:
@@ -60,13 +63,13 @@
     state: present
   tags:
     - marathon
+    - security_rotation
 
 - name: wait for zookeeper to listen
   command: "/usr/local/bin/zookeeper-wait-for-listen.sh localhost"
 
 - name: create zookeeper acl
   sudo: yes
-  run_once: yes
   command: "{{ mesos_zk_acl_cmd }}"
   notify:
     - restart mesos leader
@@ -78,6 +81,14 @@
   delay: 10
   tags:
     - mesos
+    - security_rotation
+
+- name: write iptables configuration
+  run_once: true
+  command: consul-cli kv write --token={{ consul_acl_secure_token }} secure/mesos/leader/ip_tables {{ do_mesos_iptables }}
+  tags:
+    - mesos
+    - security_rotation
 
 - name: deploy iptables configuration
   sudo: yes
@@ -87,40 +98,14 @@
   with_items:
     - src: mesos-leader-consul.cfg
       dest: /etc/consul-template/config.d
+    - src: mesos-leader-iptables.tmpl
+      dest: /etc/consul-template/templates
   notify:
     - reload consul-template
   tags:
     - mesos
-
-- name: deploy iptables template
-  sudo: yes
-  template:
-    src: mesos-leader-iptables.tmpl.j2
-    dest: /etc/consul-template/templates/mesos-leader-iptables.tmpl
-  notify:
-    reload consul-template
-  tags:
-    - mesos
-
-- name: install collectd mesos-master plugin
-  sudo: yes
-  copy:
-    src: mesos-master.py
-    dest: /usr/share/collectd/plugins
-    mode: 0444
-  tags:
-    - mesos
-    - collectd
-
-- name: configure collectd mesos-master plugin
-  sudo: yes
-  template:
-    src: mesos-master.conf.j2
-    dest: /etc/collectd.d/mesos-master.conf
-  notify:
-    - restart collectd
-  tags:
-    - mesos
-    - collectd
+    - security_rotation
 
 - include: nginx-proxy.yml
+  tags:
+    - security_rotation

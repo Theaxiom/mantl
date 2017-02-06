@@ -1,0 +1,13 @@
+# plugin.yml
+
+- name: Add key authentication 
+  kong_plugin:
+    kong_admin_uri: "{{kong_admin_base_url}}"
+    api_name: "mockbin"
+    plugin_name: "key-auth"        
+    state: present  
+  
+- name: Verify key auth was added
+  uri: 
+    url: "{{kong_base_url}}/mockbin"
+    status_code: 401 

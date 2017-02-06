@@ -1,0 +1,11 @@
+{
+  "name": "mongodb-s3-backup-restore",
+  "path": {
+    "*": {
+      "policy": "deny"
+    },
+    "secret/{{deployment_id}}/{{project_env}}/mongodb-s3-backup-restore": {
+      "policy": "read"
+    }
+  }
+}

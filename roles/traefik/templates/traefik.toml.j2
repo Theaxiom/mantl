@@ -1,14 +1,71 @@
+# {{ansible_managed}}
+
 port = ":80"
 graceTimeOut = 10
-logLevel = "ERROR"
+logLevel = "{{ traefik_loglevel }}"
+
+{% if traefik_access_log_path %}
+accessLogsFile = "/var/log/traefik/access.log"
+{% endif %}
+
+{% if traefik_access_log_path %}
+traefikLogsFile = "/var/log/traefik/traefik.log"
+{% endif %}
+
+{% if traefik_routed_cert_path %}
+defaultEntryPoints = ["http", "https"]
+[entryPoints]
+  [entryPoints.http]
+  address = ":80"
+    [entryPoints.http.redirect]
+    entryPoint = "https"
+  [entryPoints.https]
+  address = ":443"
+    [entryPoints.https.tls]
+      [[entryPoints.https.tls.certificates]]
+      certFile = "{{ traefik_routed_cert_path }}"
+      keyFile = "{{ traefik_routed_key_path }}"
+{% endif %}
+
+{% if traefik_retry_attempts %}
+[retry]
+# default is -1 -> the number of backends for a frontend
+attempts = {{traefik_retry_attempts | int }}
+{% endif %}
 
 [web]
+# The key and cert here are for accessing the web ui over ssl
+# They do not affect routed traffic to the back end 
 address = ":8081"
-CertFile = "/etc/traefik/certs/traefik-admin.cert.pem"
-KeyFile = "/etc/traefik/certs/traefik-admin.key.pem"
+CertFile = "/etc/pki/mantl/cert"
+KeyFile = "/etc/pki/mantl/key"
 
 [marathon]
 endpoint = "{{ traefik_marathon_endpoint }}"
 domain = "{{ traefik_marathon_domain }}"
 watch = true
 networkInterface = "{{ ansible_default_ipv4['interface'] }}"
+ExposedByDefault = {{ traefik_marathon_expose_by_default }}
+
+
+{# 
+# Example of LoadBalancer with sticky session. Requires v > 1.1
+# I'm using traefik:v1.1.0-rc2 with rabbitmq-management using this rule :
+
+[backends]
+  [backends.rabbitmq]
+    [backends.rabbitmq.LoadBalancer]
+      method = "drr"
+      sticky = true
+    [backends.rabbitmq.servers.1]
+    url = "http://x.x.x.x:15672"
+    [backends.rabbitmq.servers.2]
+    url = "http://x.x.x.x:15672"
+    [backends.rabbitmq.servers.3]
+    url = "http://x.x.x.:15672"
+
+[frontends]
+  backend = "rabbitmq"
+    [frontends.rabbitmq.routes.rabbitmq]
+    rule = "PathPrefixStrip: /rabbitmq"
+ #}

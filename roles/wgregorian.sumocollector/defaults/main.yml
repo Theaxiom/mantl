@@ -1,0 +1,54 @@
+---
+
+sumologic_collector_root: "{% if sumologic_install_method == 'yum' %}/usr/local/SumoCollector{% else %}/opt/SumoCollector{% endif %}"
+# directory on the host machine to mount into container
+sumologic_host_dir: /opt/SumoCollector
+# default install method to docker
+sumologic_install_method: docker
+# consume multiple sources from /etc/sumo/sumo.d
+sumologic_single_source_file: "no"
+syslog_units_directory: /usr/lib/systemd/system
+
+# directories inside container
+sumologic_config_dir: /etc/sumo
+sumologic_sources_dir: /etc/sumo/sumo.d
+
+sumologic_force_restart: "no"
+sumologic_collector_url: https://collectors.us2.sumologic.com
+# For RedHat only
+sumocollector_installer_rpm: "https://collectors.sumologic.com/rest/download/rpm/64"
+sumologic_installer_rpm_local_folder: "/tmp"
+
+# Example of using ncat to syslog tcp port 514
+# Use this if you don't have docker-daemon --log-driver=journald or json-file.
+# docker-logs.json with journald or json-file logger makes this un-necessary.
+sumologic_install_journal_syslog_service: "no"
+sumologic_remove_tar_install: "no"
+sumologic_remove_yum_install: "no"
+# For Debian apt installation only
+sumologic_installer_remote_file: "/tmp/sumocollector.deb"
+sumocollector_installer_download: "{{ sumo_installer_rpm }}"
+
+sumologic_mesos_error_seconds: 10
+# Credentials (Login to Sumo.  Username -> Preferences -> Create Access Key)
+sumologic_collector_accessid: "{{ lookup('env', 'SUMO_COLLECTOR_ACCESS_ID') }}"
+sumologic_collector_accesskey: "{{ lookup('env', 'SUMO_COLLECTOR_ACCESS_KEY') }}"
+
+# Collection of logs should be index-aware placing logs likely to be searched together
+# into the same index.
+# The category field below + partition rules determines the index
+# Suggested partition rules:
+# sumo_category_major -> cluster supporting rancher/mantl or single orchestration layer
+sumologic_collector_name: "{{ inventory_hostname }}"
+
+# Allow overwrite of old collectors. See:
+#   https://service.sumologic.com/help/Default.htm#Using_Clobber.htm
+sumologic_collector_clobber: "true"
+
+# Legacy vars from sumo.conf.  Possibly port to user.properties.
+sumologic_collector_source_template: "collector.json.j2"
+sumologic_collector_timezone: "UTC"
+sumologic_collector_force_timezone: "false"
+
+
+

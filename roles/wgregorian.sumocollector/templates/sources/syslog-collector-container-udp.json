@@ -1,0 +1,14 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "syslog-collector-container-udp",
+      "sourceType": "Syslog",
+      "port": 514,
+      "multilineProcessingEnabled":true,
+      "useAutolineMatching":true,
+      "protocol": "UDP",
+      "encoding": "UTF-8",
+      "forceTimeZone": false,
+      "category": "{{ deployment_id }}/os/syslog-port"
+   }
+}

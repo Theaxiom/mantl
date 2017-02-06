@@ -1,5 +1,41 @@
 ---
 # default is etc/utc in build 20141129 [http://cloud.centos.org/centos/7/images/]
+
+
+- debug: msg="{{groups}}"
+- name: gather ec2_facts
+  ec2_facts:
+- debug: msg="{{ansible_ssh_host}}"
+- debug: msg="{{inventory_hostname}}"
+
+# - name: gather ec2_eni_facts
+#   ec2_eni_facts:
+#     region: "{{ region }}"
+
+# - name: gather ec2_elb_facts
+#   ec2_elb_facts:
+
+# - name: gather ec2_vpc_net_facts
+#   ec2_vpc_net_facts:
+
+# - name: gather ec2_snapshot_facts
+#   ec2_snapshot_facts:
+
+# - name: gather ec2_vol_facts
+#   ec2_vol_facts:
+
+# - set_fact:
+#    private_ipv4: "{{ hostvars[inventory_hostname]['ec2_private_ip_address'] }}"
+#    when: provider == 'aws'
+
+- set_fact:
+   private_ipv4: "{{ hostvars[inventory_hostname]['ansible_ec2_local_ipv4'] }}"
+   when: provider == 'aws'
+
+- set_fact:
+   public_ipv4: ""
+   when: provider == 'aws'
+
 - name: set timezone to etc/utc
   sudo: yes
   file:
@@ -14,6 +50,30 @@
   template:
     src: hosts.j2
     dest: /etc/hosts
+    mode: 0644
+  tags:
+    - common
+
+- name: preserve hostname
+  sudo: yes
+  copy:
+    src: 02_hostname.cfg
+    dest: /etc/cloud/cloud.cfg.d/02_hostname.cfg
+    owner: root
+    group: root
+    mode: 0644
+  when: provider in cloud_init_providers
+  tags:
+    - common
+
+- name: set persistent hostname
+  sudo: yes
+  copy:
+    dest: /etc/hostname
+    content: "{{ inventory_hostname }}"
+    force: yes
+    owner: root
+    group: root
     mode: 0644
   tags:
     - common
@@ -43,15 +103,6 @@
   tags:
     - bootstrap
 
-- name: enable yum repos
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/yum.repos.d/{{ item }}"
-  with_items:
-    - asteris-mantl-rpm.repo
-    - ciscocloud-rpm.repo
-
 - name: install system utilities
   sudo: yes
   yum:
@@ -62,11 +113,13 @@
     - nc
     - openssh
     - policycoreutils-python
+    - libselinux-python
     - unzip
     - jq
     - java-1.8.0-openjdk
     - chrony
     - smlr
+    - zookeepercli
   tags:
     - bootstrap
 
@@ -119,6 +172,5 @@
     - bootstrap
 
 - include: users.yml
-- include: ssl.yml
 - include: ssh.yml
 - include: fail2ban.yml

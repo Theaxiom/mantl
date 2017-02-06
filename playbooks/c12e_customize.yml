@@ -1,0 +1,145 @@
+# c12e_customize.yml
+
+- hosts: all
+  sudo: yes
+  vars: 
+    mantl_config_dir: ~/projects/mantl-config/aws/ihc/sihc
+    certs_root: ~/projects/mantl-config
+    wildcard_certs_dir: "{{ certs_root }}/c1.io.certs"
+    use_wildcard_certs: "yes"
+    wildcard_keys: 
+      - wildcard.c1.io.key.pem
+    wildcard_certs:
+      - wildcard.c1.io.cert.pem
+  tasks:
+    - debug: msg="{{mantl_config_dir}}"
+      tags:
+        - private_config
+        
+    - name: install some basics
+      yum:
+        name: "{{item}}"
+      with_items:
+        - nano
+        - telnet
+
+    - name: stop un-needed services
+      sudo: yes
+      service:
+        name: "{{item}}"
+        enabled: no
+        state: stopped
+      with_items:
+        - etcd
+        - skydns
+        - kubelet
+      ignore_errors: yes
+
+    - name: disable un-needed services
+      sudo: yes
+      service:
+        name: "{{item}}"
+        enabled: no
+        state: disabled
+      with_items:
+        - etcd
+        - skydns
+        - kubelet
+      ignore_errors: yes
+
+# cleardata centos ami issue
+    - name: remove bad kernel.hostname entry in /etc/sysctl.conf 
+      lineinfile: 
+        dest: /etc/sysctl.conf
+        line: "kernel.hostname = ip-172-31-51-114"
+        state: absent
+      ignore_errors: yes
+      
+    - name: remove un-needed distributive jobs
+      sudo: yes
+      file:
+        state: absent
+        dest:  /etc/distributive.d/distributive-chronos.json
+
+    - name: remove un-needed consul checks
+      sudo: yes
+      file:
+        state: absent
+        dest: "/etc/consul/{{ item }}"
+      with_items:
+        - distributive-chronos-check.json
+        - etcd-service.json
+
+    - name: re-enable systemd units with re-start problems
+      sudo: yes
+      command: systemctl reenable "{{ item }}"
+      with_items:
+        - nginx-consul
+        - consul
+        - sumologic-collector      
+
+    - name: template rules.toml file
+      template:
+        src: "{{ traefik_rules_toml_path }}"
+        dest: "/etc/traefik/rules.toml"
+      when: inventory_hostname in groups['role=edge']
+
+    # - name: REMOVE ME tmp remove bad dirs 
+    #   file:
+    #     state: absent
+    #     dest: /cs/beanstalk/prod-ihc/validic-ingest
+    #   tags:
+    #     - private_config
+    #   when: inventory_hostname in groups['role=worker']
+              
+    - name: make the destination directories
+      file:
+        state: directory
+        dest: /cs/beanstalk/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}
+      with_fileglob: 
+       - "{{ mantl_config_dir }}/private_configs/*"
+      tags:
+        - private_config
+      when: inventory_hostname in groups['role=worker']
+
+    - name: copy private-config.json files to workers
+      copy:
+        src: "{{ item }}"
+        dest: /cs/beanstalk/prod-ihc/{{ (item | basename).replace('_private-config.json','') }}/private-config.json
+      with_fileglob: 
+       - "{{ mantl_config_dir }}/private_configs/*"
+      tags:
+        - private_config
+      when: inventory_hostname in groups['role=worker']
+
+    - include: wildcard_ssl.yml
+      when: (use_wildcard_certs == 'yes')
+
+    - name: make stateful directories 
+      file: 
+        state: directory
+        dest: "{{ item }}"  
+      with_items:
+       - /cs/beanstalk/prod-ihc/rabbitmq/ingest/mnesia
+       - /cs/beanstalk/prod-ihc/rabbitmq/ingest/logs
+       - /cs/beanstalk/prod-ihc/rabbitmq/ingest/data_directory
+       - /cs/beanstalk/prod-ihc/mongodb/ingest
+      when: inventory_hostname in groups['role=worker']
+
+    - name: concatenate CA and wildcard.cert for traefik
+      sudo: yes
+      shell: cat {{ traefik_routed_cert_path }} {{ traefik_routed_CA_chain_path }}  > {{ traefik_routed_chain_path }}
+      when: inventory_hostname in groups['role=edge']
+ 
+
+    - name: concatenate private key with cert for mongo
+      sudo: yes
+      shell: cat /private_certs/container.key.pem /public_certs/container.cert.pem > /private_certs/mongo.container.key.pem
+      when: inventory_hostname in groups['role=worker']
+
+    - name: concatenate CA and container.cert for mongo
+      sudo: yes
+      shell: cat /public_certs/container.cert.pem /public_certs/ca.cert.pem > /public_certs/ca-chain.cert.pem
+      when: inventory_hostname in groups['role=worker']
+
+

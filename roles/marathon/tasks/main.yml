@@ -1,4 +1,17 @@
 ---
+- name: gather ec2_facts for marathon
+  ec2_facts:
+  tags:
+    - mesos
+
+- name: set private_ipv4 compatible with terraform.py inventory
+  sudo: yes
+  set_fact:
+    private_ipv4: "{{ ansible_ec2_local_ipv4 }}"
+  when: "{{ inventory_hostname != 'localhost' }}"
+  tags:
+    - mesos
+
 - name: install marathon package
   sudo: yes
   yum:
@@ -11,20 +24,13 @@
 - name: create consul acl for marathon
   sudo: yes
   run_once: yes
-  command: consul-cli acl-update --token={{ consul_acl_master_token }} --name="Marathon ACL Token" --rule='key:marathon:write' {{ consul_acl_marathon_token }}
-  tags:
-    - marathon
-
-- name: install wait script
-  sudo: yes
-  template:
-    src: marathon-wait-for-listen.sh.j2
-    dest: /usr/local/bin/marathon-wait-for-listen.sh
-    mode: 0755
+  command: consul-cli acl update --token={{ consul_acl_master_token }} --name="Marathon ACL Token" --rule='key:marathon:write' {{ consul_acl_marathon_token }}
   tags:
     - marathon
 
 - include: conf.yml
+  tags:
+    - marathon
 
 - name: configure marathon unit file
   sudo: yes
@@ -65,6 +71,12 @@
 
 - include: nginx-proxy.yml
 
+- name: write iptables configuration
+  run_once: true
+  command: consul-cli kv write --token={{ consul_acl_secure_token }} secure/marathon/ip_tables {{ do_marathon_iptables }}
+  tags:
+    - marathon
+
 - name: deploy iptables configuration
   sudo: yes
   copy:
@@ -73,22 +85,12 @@
   with_items:
     - src: marathon-consul.cfg
       dest: /etc/consul-template/config.d
+    - src: marathon-iptables.tmpl
+      dest: /etc/consul-template/templates
   notify:
     - reload consul-template
   tags:
     - marathon
-
-- name: deploy iptables template
-  sudo: yes
-  template:
-    src: marathon-iptables.tmpl.j2
-    dest: /etc/consul-template/templates/marathon-iptables.tmpl
-  notify:
-    - reload consul-template
-  tags:
-    - marathon
-
-- include: collectd.yml
 
 - name: ensure consul.d is present
   sudo: yes

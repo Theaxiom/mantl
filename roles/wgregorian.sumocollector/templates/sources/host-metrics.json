@@ -1,0 +1,11 @@
+{
+ "api.version": "v1",
+ "source": {
+   "sourceType" : "SystemStats",
+   "category": "{{ deployment_id }}/os/perf",
+   "name": "Host-Metrics",
+   "interval" : 240000,
+   "hostName" : "{{ inventory_hostname }}",
+   "contentType":"HostMetrics"
+ }
+}

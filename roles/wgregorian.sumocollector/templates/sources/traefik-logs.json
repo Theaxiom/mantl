@@ -1,0 +1,9 @@
+  {
+  "api.version": "v1",
+  "source": {
+      "name": "Traefik-Logs",
+      "sourceType": "LocalFile",
+      "pathExpression": "/var/log/traefik/*.log*",
+      "category": "{{ deployment_id }}/infra/traefik"
+     }
+} 

@@ -1,0 +1,34 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "Syslog",
+      "filters": [{
+        "filterType": "Exclude",
+        "name": "kubernetes",
+        "regexp": ".*kube.*"
+        }, 
+        {
+          "filterType": "Exclude",
+          "name": "RPC request for DC",
+          "regexp": ".*RPC\\srequest\\sfor\\DC.*"
+        }, 
+        {
+          "filterType": "Exclude",
+          "name": "no path to datacenter",
+          "regexp": "No path to datacenter"
+        },
+        {
+          "filterType": "Exclude",
+          "name": "journald docker logs",
+          "regexp": ".*journal:.*"
+        }, 
+        {
+          "filterType": "Exclude",
+          "name": "etcd",
+          "regexp": ".*etcd.*"
+        }],
+       "sourceType": "LocalFile",
+       "pathExpression": "/var/log/messages*",
+       "category": "{{ deployment_id }}/os/syslog"
+    }
+}

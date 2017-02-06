@@ -1,0 +1,5 @@
+# main.yml
+
+
+hardware_swap_size_in_mb: 1024
+swap_dir: /var/swap

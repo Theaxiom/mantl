@@ -1,0 +1,55 @@
+{
+  "api.version": "v1",
+  "sources": [
+{% for source in sumologic_collector_log_paths['common'] %}
+    {{ source |to_nice_json }}{% if not loop.last %},{% endif %}
+
+{% endfor %}{% if inventory_hostname in groups['role=worker'] %},
+{% for source in sumologic_collector_log_paths['worker'] %}
+    {
+      "name": "{{ source.name }}",
+      "sourceType": "LocalFile",
+      "automaticDateParsing": true,
+      "multilineProcessingEnabled": "{{ source.use_multiline | default(false) }}",
+      "useAutolineMatching": true,
+      "forceTimeZone": {{ sumologic_collector_force_timezone | default(sumologic_collector_force_timzone) }},
+      "timeZone": "{{ sumologic_collector_timezone }}",
+      "category": "{{ source.category }}",
+      "pathExpression": "{{ source.path }}"
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+{% endif %}
+{% if inventory_hostname in groups['role=control'] %},
+{% for source in sumologic_collector_log_paths['control'] %}
+    {
+      "name": "{{ source.name }}",
+      "sourceType": "LocalFile",
+      "automaticDateParsing": true,
+      "multilineProcessingEnabled": "{{ source.use_multiline | default(false) }}",
+      "useAutolineMatching": true,
+      "forceTimeZone": {{ sumologic_collector_force_timezone | default(sumologic_collector_force_timzone) }},
+      "timeZone": "{{ sumologic_collector_timezone }}",
+      "category": "{{ source.category }}",
+      "pathExpression": "{{ source.path }}"
+    }
+    {% if not loop.last %},{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if inventory_hostname in groups['role=edge'] %},
+{% for source in sumologic_collector_log_paths['edge'] %}
+    {
+      "name": "{{ source.name }}",
+      "sourceType": "LocalFile",
+      "automaticDateParsing": true,
+      "multilineProcessingEnabled": "{{ source.use_multiline | default(false) }}",
+      "useAutolineMatching": true,
+      "forceTimeZone": {{ sumologic_collector_force_timezone | default(sumologic_collector_force_timzone) }},
+      "timeZone": "{{ sumologic_collector_timezone }}",
+      "category": "{{ source.category }}",
+      "pathExpression": "{{ source.path }}"
+    }{% if not loop.last %},{% endif %}
+{% endfor %}
+{% endif %}
+  ]
+}

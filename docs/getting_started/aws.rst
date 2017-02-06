@@ -5,7 +5,7 @@ Amazon Web Services
 
 As of Mantl 0.3 you can bring up Amazon Web Services
 environments using Terraform. You can `download Terraform from terraform.io
-<http://www.terraform.io/downloads.html>`_.
+<https://www.terraform.io/downloads.html>`_.
 
 Configuring Amazon Web Services for Terraform
 -----------------------------------------------
@@ -23,7 +23,7 @@ customization. In the next sections, we'll describe the settings that you need
 to configure.
 
 Do not copy the text contents above into a file, if you do not have the terraform/aws.sample.tf file, you need to clone the mantl repository.
-Please note, newer versions of this file do not have "access_key" or "secret_key" lines, we automatically find your AWS credentials from amazon's new "AWS Credentials file" standard.
+Please note, newer versions of this file do not have "access_key" or "secret_key" lines, we automatically find your AWS credentials from Amazon's new "AWS Credentials file" standard.
 
 Store your credentials like below in a file called ``~/.aws/credentials`` on Linux/Mac, or ``%USERPROFILE%\.aws\credentials`` on Windows.
 
@@ -33,7 +33,7 @@ Store your credentials like below in a file called ``~/.aws/credentials`` on Lin
   aws_access_key_id = ACCESS_KEY
   aws_secret_access_key = SECRET_KEY
 
-If you do not have an AWS access key ID and secret key, then follow the "Creating an IAM user" section below. If you already have working AWS credentials, you can skip this step.
+If you do not have an AWS access key ID and secret key, then follow the "Creating an IAM User" section below. If you already have working AWS credentials, you can skip this step.
 
 Creating an IAM User
 ^^^^^^^^^^^^^^^^^^^^^
@@ -42,7 +42,7 @@ Before running Terraform, we need to supply it with valid AWS credentials. While
 you could use the credentials for your AWS root account, it is `not recommended
 <http://docs.aws.amazon.com/general/latest/gr/aws-access-keys-best-practices.html>`_.
 In this section, we'll cover creating an `IAM User
-<http://docs.aws.amazon.com/IAM/latest/UserGuide/Using_WorkingWithGroupsAndUsers.html>`_
+<http://docs.aws.amazon.com/IAM/latest/UserGuide/id.html>`_
 that has the necessary permissions to build your cluster with Terraform.
 
 .. note:: You'll need to have an existing AWS account with sufficient IAM
@@ -193,6 +193,8 @@ Terraform to provision your cluster, ``terraform plan`` to see what will be
 created, and ``terraform apply`` to provision the cluster.
 
 After ``terraform apply`` has completed without errors, you're ready to continue.
+If you are using elastic ips on aws, you need to run ``terraform refresh`` to allow the eips to replace the public ips due to terraform issue 5407. 
+For more than 5 elastic ips, you must `submit a request <http://aws.amazon.com/contact-us/eip_limit_request/>`_ to increase your limit but they are trivially inexpensive.
 Next, follow the instructions at :doc:`getting started <index>` to install
 Mantl on your new AWS VM's
 
@@ -202,9 +204,9 @@ Mantl on your new AWS VM's
 Terraform State
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Terraform stores the `state <https://terraform.io/docs/state/index.html>`_ of your
+Terraform stores the `state <https://www.terraform.io/docs/state/index.html>`_ of your
 infrastructure in a file called "terraform.tfstate". This file can be stored locally
-or in a `remote <https://terraform.io/docs/state/index.html>`_ location such as S3.
+or in a `remote <https://www.terraform.io/docs/state/index.html>`_ location such as S3.
 If you use the ``aws.sample.tf`` that is provided, by default the state of all the modules
 are stored in local terraform.tfstate file at the root of this project.
 
@@ -265,38 +267,3 @@ For managing DNS with Route 53, you can use a policy like the following:
 
 You would replace HOSTED_ZONE_ID with the hosted zone ID of your domain in
 Route 53.
-
-Adding an Elastic Load Balancer (ELB)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Optionally, you can configure your environment to include an Elastic Load
-Balancer (ELB) in front of Mantl UI.
-
-You will need to ensure that your IAM user has the following permissions:
-
-* elasticloadbalancing:AddTags
-* elasticloadbalancing:ApplySecurityGroupsToLoadBalancer
-* elasticloadbalancing:ConfigureHealthCheck
-* elasticloadbalancing:CreateLoadBalancer
-* elasticloadbalancing:CreateLoadBalancerListeners
-* elasticloadbalancing:DeleteLoadBalance
-* elasticloadbalancing:DescribeLoadBalancerAttributes
-* elasticloadbalancing:DescribeLoadBalancers
-* elasticloadbalancing:ModifyLoadBalancerAttributes
-* elasticloadbalancing:RegisterInstancesWithLoadBalancer
-* iam:DeleteServerCertificate
-* iam:GetServerCertificate
-* iam:UploadServerCertificate
-
-In your ``aws.tf``, you will want to uncomment the aws-elb module:
-
-.. code-block:: json
-
-  # Example setup for an AWS ELB
-  module "aws-elb" {
-    source = "./terraform/aws/elb"
-    short_name = "${var.short_name}"
-    instances = "${module.control-nodes.control_ids}"
-    subnets = "${terraform_remote_state.vpc.output.subnet_ids}"
-    security_groups = "${module.control-nodes.ui_security_group},${terraform_remote_state.vpc.output.default_security_group}"
-  }

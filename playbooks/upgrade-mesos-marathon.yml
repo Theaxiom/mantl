@@ -5,6 +5,7 @@
   serial: "{{ serial | default(1) }}"
   vars:
     mesos_mode: follower
+    zookeeper_server_group: role=control
   handlers:
     - include: ../roles/mesos/handlers/main.yml
   tasks:
@@ -35,6 +36,7 @@
   serial: "{{ serial | default(1) }}"
   vars:
     mesos_mode: leader
+    zookeeper_server_group: role=control
   handlers:
     - include: ../roles/mesos/handlers/main.yml
     - include: ../roles/marathon/handlers/main.yml
@@ -79,8 +81,10 @@
 
 - hosts: role=control
   serial: "{{ serial | default(1) }}"
-  tasks:
+  vars:
+    zookeeper_server_group: role=control
     # collectd gets confused after the mesos upgrade
+  tasks:
     - name: restart collectd
       sudo: yes
       service:

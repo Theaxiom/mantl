@@ -12,6 +12,30 @@
     - consul
     - bootstrap
 
+- name: gather ec2_facts for mesos
+  ec2_facts:
+  tags:
+    - consul
+    - security_rotation
+
+- set_fact:
+    private_ipv4: "{{ hostvars[inventory_hostname]['ansible_ec2_local_ipv4'] }}"
+    when: provider == 'aws'
+  tags:
+    - consul
+    - security_rotation
+
+- name: add consul user to tls group
+  sudo: yes
+  user:
+    append: yes
+    name: consul
+    groups: tls
+
+# - set_fact:
+#    private_ipv4: "{{ hostvars[inventory_hostname]['ec2_private_ip_address'] }}"
+#    when: provider == 'aws'
+
 - name: configure consul
   sudo: yes
   template:
@@ -39,25 +63,6 @@
   tags:
     - consul
 
-- name: deploy tls files
-  sudo: yes
-  copy:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
-    owner: consul
-    group: consul
-  with_items:
-    - src: ssl/cacert.pem
-      dest: /etc/consul/ssl/{{ consul_ca_file }}
-    - src: ssl/certs/consul.cert.pem
-      dest: /etc/consul/ssl/{{ consul_cert_file }}
-    - src: ssl/private/consul.key.pem
-      dest: /etc/consul/ssl/{{ consul_key_file }}
-  notify:
-    - restart consul
-  tags:
-    - consul
-
 - name: install scripts
   sudo: yes
   copy:
@@ -71,7 +76,7 @@
   tags:
     - consul
 
-- name: enable consul
+- name: start consul
   sudo: yes
   service:
     name: consul
@@ -93,7 +98,7 @@
 - name: create secure acl
   sudo: yes
   run_once: yes
-  command: consul-cli acl-update --token={{ consul_acl_master_token }} --name="Mantl Secure Token" --rule='key:secure:write' --rule='service::write' {{ consul_acl_secure_token }}
+  command: consul-cli acl update --token={{ consul_acl_master_token }} --name="Mantl Secure Token" --rule='key:secure:write' --rule='service::write' {{ consul_acl_secure_token }}
   tags:
     - consul
 

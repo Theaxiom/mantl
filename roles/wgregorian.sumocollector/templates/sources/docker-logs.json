@@ -1,0 +1,12 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "Docker-Logs",
+      "allContainers": true,
+      "collectEvents": true,
+      "uri": "unix:///var/run/docker.sock",
+      "multilineProcessingEnabled": false,
+      "sourceType": "DockerLog",
+      "category": "{{ deployment_id }}/containers"
+   }
+}

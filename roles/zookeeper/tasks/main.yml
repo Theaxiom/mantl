@@ -110,6 +110,36 @@
   tags:
     - zookeeper
 
+- name: stop zookeeper
+  sudo: yes
+  service:
+    name: "{{ zookeeper_service }}"
+    state: stopped
+  tags:
+    - clean_zookeeper
+    - zookeeper
+  when: do_clean_zookeeper is defined
+
+- name: remove zookeeper data directory
+  sudo: yes
+  file:
+    path: /var/lib/zookeeper/version-2
+    state: absent
+  tags:
+    - clean_zookeeper
+    - zookeeper
+  when: do_clean_zookeeper is defined
+
+- name: uninstall zookeeper package
+  sudo: yes
+  yum:
+    name: mesosphere-zookeeper.x86_64
+    state: absent
+  tags:
+    - clean_zookeeper
+    - zookeeper
+  when: do_clean_zookeeper is defined
+
 - name: create zookeeper data directory
   sudo: yes
   file:
@@ -162,15 +192,5 @@
     state: started
   tags:
     - zookeeper
-
-- name: install zookeepercli package
-  sudo: yes
-  yum:
-    name: https://github.com/outbrain/zookeepercli/releases/download/v1.0.10/zookeepercli-1.0.10-1.x86_64.rpm
-    state: present
-  tags:
-    - zookeeper
-
-- include: collectd.yml
 
 - meta: flush_handlers

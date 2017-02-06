@@ -1,0 +1,50 @@
+# native_install.yml
+
+- name: Install sumo with sumo installer
+  shell: wget "https://collectors.us2.sumologic.com/rest/download/linux/64" -O SumoCollector.sh && sudo chmod +x SumoCollector.sh && sudo ./SumoCollector.sh -q -Vsumo.token_and_url=MDQxdEdweHNLMDNtd210SDg3SENsSU0wMW1ZSGIzcDVodHRwczovL2NvbGxlY3RvcnMudXMyLnN1bW9sb2dpYy5jb20=
+  tags: [sumologic, sumologic_token_installer]
+  when: sumologic_token_installer is defined
+
+- name: 'Check for SumoCollector on Debian'
+  command: dpkg-query -l sumocollector
+  register: sumologic_collector_deb_check
+  failed_when: no
+  tags: [sumologic, sumologic_force_restart]
+  #when: ansible_os_family == "Debian"
+
+- name: 'Download SumoCollector for Debian'
+  get_url:
+    url: '{{ sumocollector_installer_download }}'
+    dest: '{{ sumologic_installer_remote_file }}'
+  when: ( sumologic_collector_deb_check.rc == 1 ) and ( ansible_os_family == "Debian" )
+  tags: [sumologic, sumologic_force_restart]
+
+- name: 'Install SumoCollector for Debian'
+  apt:
+    deb: '{{ sumologic_installer_remote_file }}'
+    state: installed
+  when: ( sumologic_collector_deb_check.rc == 1 ) and ( ansible_os_family == "Debian" )
+  tags: sumologic
+  notify: Restart SumoCollector
+
+- name: 'Check for SumoCollector on RedHat'
+  command: yum list *sumo_collector*
+  register: sumologic_collector_yum_check
+  failed_when: no
+  tags: [sumologic, sumologic_force_restart]
+  #when: ansible_os_family == "RedHat"
+
+- name: 'Download SumoCollector redhat'
+  get_url:
+    url: '{{ sumocollector_installer_rpm }}'
+    dest: '{{ sumologic_installer_rpm_local_folder }}/sumo_collector.rpm'
+  when: ( sumologic_collector_yum_check.rc == 1 ) and ( ansible_os_family == "RedHat" )
+  tags: [sumologic, sumologic_force_restart]
+
+- name: 'Install SumoCollector redhat'
+  yum:
+    name: '{{ sumologic_installer_rpm_local_folder }}/sumo_collector.rpm'
+    state: present
+  when: ( sumologic_collector_yum_check.rc == 1 ) and ( ansible_os_family == "RedHat" ) 
+  tags: [sumologic, sumologic_force_restart]
+  notify: Restart SumoCollector

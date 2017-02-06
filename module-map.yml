@@ -1,0 +1,46 @@
+# module-map.yml
+
+# map terraforming aquired resource names to tfstate module paths
+
+# The keys are the resource or module class types in the .tf file
+# Without module-map.yml all resources will be added to 
+# path: [ root ].  
+
+# {
+#     "version": 1,
+#     "serial": 10,
+#     "modules": [
+#         {
+#             "path": [
+#                 "root"
+#             ],
+#             "outputs": {},
+#             "resources": {}
+#         },
+#         {
+#             "path": [
+#                 "root",
+#                 "aws-elb"
+#             ],
+#             "outputs": {
+#                 "fqdn": "",
+#                 "zone_id": ""
+#             },
+#             "resources": {}
+#         }
+# }
+#
+
+module_map: {
+    "aws_vpc": "vpc",
+    "aws_security_group": "security-group",
+    "aws_elb": "aws-elb",
+    "aws_route53": "route53",
+    "aws_key_pair": "ssh-key",
+    "aws_elb": "traefik-elb",
+    "aws_instance": "lambdafn x: x.find('control') != -1",
+    "aws_route_table": "vpc",
+    "aws_route53_zone": route53,
+    "aws_route_table": "vpc",
+    "aws_route_table_association": "vpc"
+}

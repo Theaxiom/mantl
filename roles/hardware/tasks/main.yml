@@ -1,0 +1,12 @@
+# main.yml
+
+- name: check if swap is mounted
+  stat:
+    path: "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MB.swap"
+  register: register_stat
+  tags:
+    - swap
+
+- include: increase_swap.yml
+  when: ( inventory_hostname in groups['role=worker'] ) and not ( register_stat.stat.exists )
+

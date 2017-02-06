@@ -1,0 +1,18 @@
+# api.yml
+
+- name: Register APIs
+  kong_api:
+    kong_admin_uri: "{{kong_admin_base_url}}"
+    name: "{{ item.name }}"
+    upstream_url: "{{ item.upstream_url }}"
+    request_host: "{{ item.request_host }}"   
+    request_path: "{{ item.path }}"   
+    strip_request_path: yes
+    state: present
+  with_items: kong_apis
+
+- name: Verify API was added
+  uri: 
+    url: "{{kong_admin_base_url}}/apis/{{ item.name }}"
+    status_code: 200
+  with_items: kong_apis

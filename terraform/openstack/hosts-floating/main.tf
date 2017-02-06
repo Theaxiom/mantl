@@ -16,6 +16,7 @@ variable ip_version { default = "4" }
 variable keypair_name { }
 variable long_name { default = "mantl" }
 variable worker_count {}
+variable kubeworker_count { default = "0"}
 variable worker_flavor_name { }
 variable security_groups { default = "default" }
 variable short_name { default = "mantl" }
@@ -50,6 +51,16 @@ resource "openstack_blockstorage_volume_v1" "mi-worker-lvm" {
   count = "${ var.worker_count }"
 }
 
+resource "openstack_blockstorage_volume_v1" "mi-kubeworker-lvm" {
+  name = "${ var.short_name }-kubeworker-lvm-${format("%02d", count.index+1) }"
+  description = "${ var.short_name }-kubeworker-lvm-${format("%02d", count.index+1) }"
+  size = "${ var.worker_data_volume_size }"
+  metadata = {
+    usage = "container-volumes"
+  }
+  count = "${ var.kubeworker_count }"
+}
+
 resource "openstack_blockstorage_volume_v1" "mi-edge-lvm" {
   name = "${ var.short_name }-edge-lvm-${format("%02d", count.index+1) }"
   description = "${ var.short_name }-edge-lvm-${format("%02d", count.index+1) }"
@@ -61,7 +72,7 @@ resource "openstack_blockstorage_volume_v1" "mi-edge-lvm" {
 }
 
 resource "openstack_compute_instance_v2" "control" {
-  floating_ip = "${ element(openstack_compute_floatingip_v2.ms-control-floatip.*.address, count.index) }"
+  floating_ip = "${ element(openstack_networking_floatingip_v2.ms-control-floatip.*.address, count.index) }"
   name                  = "${ var.short_name}-control-${format("%02d", count.index+1) }"
   key_pair              = "${ var.keypair_name }"
   image_name            = "${ var.image_name }"
@@ -81,7 +92,7 @@ resource "openstack_compute_instance_v2" "control" {
 }
 
 resource "openstack_compute_instance_v2" "worker" {
-  floating_ip = "${ element(openstack_compute_floatingip_v2.ms-worker-floatip.*.address, count.index) }"
+  floating_ip = "${ element(openstack_networking_floatingip_v2.ms-worker-floatip.*.address, count.index) }"
   name                  = "${ var.short_name}-worker-${format("%03d", count.index+1) }"
   key_pair              = "${ var.keypair_name }"
   image_name            = "${ var.image_name }"
@@ -100,8 +111,28 @@ resource "openstack_compute_instance_v2" "worker" {
   count                 = "${ var.worker_count }"
 }
 
+resource "openstack_compute_instance_v2" "kubeworker" {
+  floating_ip = "${ element(openstack_networking_floatingip_v2.ms-kubeworker-floatip.*.address, count.index) }"
+  name                  = "${ var.short_name}-kubeworker-${format("%03d", count.index+1) }"
+  key_pair              = "${ var.keypair_name }"
+  image_name            = "${ var.image_name }"
+  flavor_name           = "${ var.worker_flavor_name }"
+  security_groups       = [ "${ var.security_groups }" ]
+  network               = { uuid = "${ openstack_networking_network_v2.ms-network.id }" }
+  volume = {
+    volume_id = "${element(openstack_blockstorage_volume_v1.mi-kubeworker-lvm.*.id, count.index)}"
+    device = "/dev/vdb"
+  }
+  metadata              = {
+                            dc = "${var.datacenter}"
+                            role = "kubeworker"
+                            ssh_user = "${ var.ssh_user }"
+                          }
+  count                 = "${ var.kubeworker_count }"
+}
+
 resource "openstack_compute_instance_v2" "edge" {
-  floating_ip     = "${ element(openstack_compute_floatingip_v2.ms-edge-floatip.*.address, count.index) }"
+  floating_ip     = "${ element(openstack_networking_floatingip_v2.ms-edge-floatip.*.address, count.index) }"
   name            = "${var.short_name}-edge-${format("%02d", count.index+1)}"
   key_pair        = "${var.keypair_name}"
   image_name      = "${var.image_name}"
@@ -123,7 +154,7 @@ resource "openstack_compute_instance_v2" "edge" {
   count = "${var.edge_count}"
 }
 
-resource "openstack_compute_floatingip_v2" "ms-control-floatip" {
+resource "openstack_networking_floatingip_v2" "ms-control-floatip" {
   pool 	     = "${ var.floating_pool }"
   count      = "${ var.control_count }"
   depends_on = [ "openstack_networking_router_v2.ms-router",
@@ -131,7 +162,7 @@ resource "openstack_compute_floatingip_v2" "ms-control-floatip" {
                  "openstack_networking_router_interface_v2.ms-router-interface" ]
 }
 
-resource "openstack_compute_floatingip_v2" "ms-worker-floatip" {
+resource "openstack_networking_floatingip_v2" "ms-worker-floatip" {
   pool       = "${ var.floating_pool }"
   count      = "${ var.worker_count }"
   depends_on = [ "openstack_networking_router_v2.ms-router",
@@ -139,7 +170,15 @@ resource "openstack_compute_floatingip_v2" "ms-worker-floatip" {
                  "openstack_networking_router_interface_v2.ms-router-interface" ]
 }
 
-resource "openstack_compute_floatingip_v2" "ms-edge-floatip" {
+resource "openstack_networking_floatingip_v2" "ms-kubeworker-floatip" {
+  pool       = "${ var.floating_pool }"
+  count      = "${ var.kubeworker_count }"
+  depends_on = [ "openstack_networking_router_v2.ms-router",
+                 "openstack_networking_network_v2.ms-network",
+                 "openstack_networking_router_interface_v2.ms-router-interface" ]
+}
+
+resource "openstack_networking_floatingip_v2" "ms-edge-floatip" {
   pool       = "${var.floating_pool}"
   count      = "${var.edge_count}"
   depends_on = [ "openstack_networking_router_v2.ms-router",
@@ -169,13 +208,17 @@ resource "openstack_networking_router_interface_v2" "ms-router-interface" {
 }
 
 output "control_ips" {
-  value = "${join(\",\", openstack_compute_instance_v2.control.*.access_ip_v4)}"
+  value = "${join(",", openstack_compute_instance_v2.control.*.access_ip_v4)}"
 }
 
 output "worker_ips" {
-  value = "${join(\",\", openstack_compute_instance_v2.worker.*.access_ip_v4)}"
+  value = "${join(",", openstack_compute_instance_v2.worker.*.access_ip_v4)}"
+}
+
+output "kubeworker_ips" {
+  value = "${join(",", openstack_compute_instance_v2.kubeworker.*.access_ip_v4)}"
 }
 
 output "edge_ips" {
-  value = "${join(\",\", openstack_compute_instance_v2.edge.*.access_ip_v4)}"
+  value = "${join(",", openstack_compute_instance_v2.edge.*.access_ip_v4)}"
 }

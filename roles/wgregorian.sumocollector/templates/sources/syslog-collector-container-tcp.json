@@ -1,0 +1,14 @@
+{
+  "api.version": "v1",
+  "source": {
+      "name": "syslog-collector-container-tcp",
+      "sourceType": "Syslog",
+      "multilineProcessingEnabled":true,
+      "useAutolineMatching":true,
+      "port": 514,
+      "protocol": "TCP",
+      "encoding": "UTF-8",
+      "forceTimeZone": false,
+      "category": "{{ deployment_id }}/os/syslog-port"
+   }
+}

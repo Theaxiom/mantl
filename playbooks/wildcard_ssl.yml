@@ -1,0 +1,189 @@
+---
+
+# TODO
+# /private_certs and /public/certs should be variables
+
+# This should probably be split into two files
+# The first in [optional edit to ] roles/common/tasks/ssl.yml to place 
+# the files into a standard  place on the host where containers can mount them.
+# Motivation: the location of these files has 
+# changed several times and may be os dependent.  Companies may have conventions
+# for locations for security reasons.
+
+# The second in roles/traefik/tasks/routed_certs.yml is to copy wildcard certs 
+# to traefik edge nodes to handle external
+# termination.  At the moment, the wildcards are added to all nodes.  It might be useful
+# for controller nodes so that we can have a verified cert for the mantlui.
+# It is unlikely the worker nodes would need them unless the workers were publicly routable.
+
+
+###########################################
+# move self-signed CA certs into place
+###########################################
+
+- name: make the cert directories
+  sudo: yes
+  file: 
+    state: directory
+    dest: "{{ item }}"
+    mode: 0755
+  with_items:
+    - /private_certs
+    - /public_certs
+    - /cacerts
+
+- name: copy CA cert into place
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+  with_items:
+    - src: ../ssl/cacert.pem
+      dest: /public_certs/ca.cert.pem
+    - src: ../ssl/cacert.pem
+      dest: /cacerts/ca.cert.pem
+
+- name: copy container keys and certs into place
+  sudo: yes
+  shell: cp "{{ item.src }}" "{{ item.dest }}"
+  with_items:
+    - src: /etc/pki/mantl/cert
+      dest: /public_certs/container.cert.pem
+    - src: /etc/pki/mantl/key
+      dest: /private_certs/container.key.pem
+  when: no_use_vault_certs is defined
+
+- name: copy container keys and certs into place
+  sudo: yes
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+  with_items:
+    - src: ../ssl/cacert.pem
+      dest: /public_certs/ca.cert.pem
+    - src: ../ssl/certs/host.cert.pem
+      dest: /public_certs/container.cert.pem
+    - src: ../ssl/private/host.key.pem
+      dest: /private_certs/container.key.pem
+  when: no_use_vault_certs is defined
+
+###########################################
+# move 3rd party wildcard certs into place
+# (these could conceivably be letsencrypt HA certs too)
+###########################################
+
+- name: copy public wildcard certs to /public_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/public_certs/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob: 
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+  tags:
+    - update_certs
+
+- name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/ca-trust/source/anchors/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+
+- name: copy public wildcard certs to /etc/pki/CA/
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/CA/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+
+- name: copy wildcard private keys to /private_certs
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/private_certs/{{ item | basename }}"
+    owner: root
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+    
+# per david, apple doesn't let us use 2 certs.
+# - name: rename aps_development pem files
+#   shell: mv "{{ item.src }}" "{{ item.dest }}"
+#   with_items:
+#     - { src: /private_certs/aps_development.key.pem, dest: /private_certs/aps.key.pem }  
+#     - { src: /public_certs/aps_development.cert.pem, dest: /public_certs/aps.cert.pem }  
+#   when: deployment_id == "sihc"
+#   tags:
+#     - update_certs
+
+- name: remove aps_development pem files from pihc
+  file: 
+    dest: "{{ item }}"
+    state: absent
+  with_items:
+    - /private_certs/aps_development.key.pem
+    - /public_certs/aps_development.cert.pem
+  when: deployment_id == "pihc"
+  tags:
+    - update_certs
+
+- name: ensure ssl_services group exists
+  group:
+    name: ssl_services
+    state: present
+
+- name: on edge nodes make traefik owner of /private_certs
+  sudo: yes
+  file:
+    state: directory
+    dest: "/private_certs"
+    owner: traefik
+    mode: 0440
+    recurse: yes
+  when: inventory_hostname in groups['role=edge']
+
+- name: on all nodes make ssl_services group owner of /private_certs
+  sudo: yes
+  file:
+    state: directory
+    dest: "/private_certs"
+    group: ssl_services
+    mode: 0440
+    recurse: yes
+
+- name: on all nodes make /private_certs 0551
+  sudo: yes
+  file:
+    state: directory
+    dest: "/private_certs"
+    mode: 0551
+
+- name: copy wildcard private keys to /etc/pki/tls/private
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/CA/{{ item | basename }}"
+    owner: root
+    mode: 0400
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/private_certs/*"
+
+- name: update-ca-trust
+  shell: update-ca-trust
+
+# This should be moved to traefik/handlers/main.yml if placed in a role
+- name: restart traefik
+  service:
+    name: traefik
+    state: restarted
+  when: inventory_hostname in groups['role=edge']

@@ -1,5 +1,6 @@
-variable ssl_cert_file { default = "./ssl/certs/nginx.cert.pem" }
-variable ssl_key_file { default = "./ssl/private/nginx.key.pem" }
+variable ssl_cert_file { default = "./ssl/cacert.pem" }
+variable ssl_chain_file { default = "./ssl/cacert.pem" }
+variable ssl_key_file { default = "./ssl/private/cakey.pem" }
 variable short_name { }
 variable instances {}
 variable subnets {}
@@ -17,9 +18,9 @@ resource "aws_elb" "traefik-elb" {
   idle_timeout = 400
   connection_draining = true
   connection_draining_timeout = 400
-  subnets = ["${split(\",\", var.subnets)}"]
-  security_groups = ["${split(\",\", var.security_groups)}"]
-  instances = ["${split(\",\", var.instances)}"]
+  subnets = ["${split(",", var.subnets)}"]
+  security_groups = ["${split(",", var.security_groups)}"]
+  instances = ["${split(",", var.instances)}"]
 
   listener {
     instance_port = 80

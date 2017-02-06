@@ -1,0 +1,3 @@
+rm -rf ssl
+git checkout ssl
+./security-setup  --dns-alt-cert-names-string 'DNS:*.node.c1.io, DNS:*.c1.io, DNS:*.marathon.k4b4-mantl.c1.io, DNS:*.ihc.k4b4-mantl.c1.io, DNS:*.prod.ihc.k4b4-mantl.c1.io, DNS:*.stage.ihc.k4b4-mantl.c1.io, DNS: *.ihc.c1.io, DNS: *.prod.ihc.c1.io, DNS: *.stage.ihc.c1.io'

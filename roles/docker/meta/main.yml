@@ -1,3 +1,6 @@
 ---
 dependencies:
   - role: lvm
+  - role: handlers
+  - role: certificates
+    when: docker_tcp and docker_tcp_tls
