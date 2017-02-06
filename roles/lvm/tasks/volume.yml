@@ -9,6 +9,7 @@
     - docker
     - bootstrap
     - lvm
+  when: ansible_os_family == "RedHat"
 
 - name: install LVM tools
   sudo: yes
@@ -19,6 +20,7 @@
     - docker
     - bootstrap
     - lvm
+  when: ansible_os_family == "RedHat"
 
 - name: enable lvmetad service
   sudo: yes
@@ -29,6 +31,7 @@
   tags:
     - docker
     - lvm
+  when: ansible_os_family == "RedHat"
 
 - name: create directory for volume configs
   sudo: yes
@@ -45,6 +48,7 @@
   template:
     src: mantl-volume-group.conf.j2
     dest: /etc/mantl/filesystems.d/10-volume-group.conf
+  when: docker_lvm_group
   tags:
     - docker
     - lvm
@@ -57,6 +61,7 @@
   tags:
     - docker
     - lvm
+  when: ansible_os_family == "RedHat"
 
 - name: install mantl-storage-setup (development)
   include: debug.yml

@@ -88,7 +88,7 @@
   vars:
     # Passing override_tags=yes allows forcing sleep/wake against their tags.
     default_sleep_control: 'never'
-    override_tags: 'no'
+    override_tags: 'yes'
     # pass -e do_sleep=no to skip putting to sleep block
     do_sleep: 'yes'
     # pass -e do_wake=no to only put to sleep without waking
@@ -97,6 +97,24 @@
     do_sleep_controllers: 'no'
 
   tasks:
+  - set_fact:
+      marathon_group: green-ihc
+
+  - name: shutdown tier 3 apps
+    local_action:
+      module: "shell curl -X DELETE -sku {{ chronos_http_credentials }} \
+             -H 'Content-Type: application/json' \
+             'https://sihc.c1.io/marathon/v2/groups/{{ marathon_group }}?force=true'"
+    when: (do_sleep == "yes") and (inventory_hostname == groups['role=control'][0])
+    run_once: yes
+
+  - name: pause while marathon kills tier 3 apps 
+    local_action:
+      module: pause
+      seconds: 10
+    when: (do_sleep == "yes") and (inventory_hostname == groups['role=control'][0])
+    run_once: yes
+
   - name: set consul maintenance enable
     command: consul maint -enable -reason "{{ lookup('env', 'USER') }} initiated sleep"
     register: register_consul_maint
@@ -138,8 +156,8 @@
     do_wake: 'yes'
     do_sleep: 'yes'
     default_sleep_control: 'never'
-    override_tags: 'no'
-    do_restart_consul: 'no'
+    override_tags: 'yes'
+    do_restart_consul: 'yes'
     do_sleep_controllers: 'no'
   tasks:
 
@@ -224,7 +242,7 @@
     become: yes
     delegate_to: "{{ item }}"
     with_items: "{{ groups['role=control'] }}"
-    when: ( do_restart_consul == 'yes' ) or ( do_sleep_controllers == 'yes' )
+    when: ( do_restart_consul == 'yes' ) or (( do_sleep_controllers == 'yes' ) and (do_wake != 'yes'))
 
   - name: template raft/peers.json to replace null from graceful shutdown 
     template: 
@@ -233,13 +251,14 @@
     delegate_to: "{{ item }}"
     with_items: "{{ groups['role=control'] }}"
     become: yes
+    when: ( do_restart_consul == 'yes' ) or (( do_sleep_controllers == 'yes' ) and (do_wake != 'yes'))
 
   - name: start consul 
     shell: systemctl start consul
     become: yes
     delegate_to: "{{ item }}"
     with_items: "{{ groups['role=control'] }}"
-    when: ( do_restart_consul == 'yes' ) or ( do_sleep_controllers == 'yes' )
+    when: ( do_restart_consul == 'yes' )
 
 ###############################
 # Regroup running instances
@@ -251,7 +270,7 @@
     do_wake: 'yes'
     do_sleep: 'yes'
     default_sleep_control: 'never'
-    override_tags: 'no'
+    override_tags: 'yes'
   tasks:
   - set_fact:
       consul_nodes: "{{ ( (groups['role=worker'] | default([])) + (groups['role=control'] | default([])) + (groups['role=edge']) | default([])) }}"
@@ -304,17 +323,43 @@
   - name: pause for rolling reboot
     pause:
       seconds: 1
+    when: do_wake == 'yes'
 
 
 #################################
 # restart non-persistent services
 #################################
 
-  - name: reload nginx-mantlui
+  - name: ensure fail2ban dirs exist
     sudo: yes
-    command: systemctl restart nginx-mantlui
-    tags:
-      - mantlui
+    file:
+      dest: /var/run/fail2ban
+      state: directory
+    when: do_wake == 'yes'
+
+  - name: ensure frail systemd units are started
+    sudo: yes
+    service:
+      name: "{{ item }}"
+      state: started
+    with_items:
+      - docker
+      - consul
+      - auditd
+      - fail2ban
+      - nginx-consul
+      - sumologic-collector
+      - cloud-init-local
+    when: ( do_wake == 'yes' )
+  
+  - name: ensure frail systemd control units are started
+    sudo: yes
+    service:
+      name: "{{ item }}"
+      state: started
+    with_items:
+       - nginx-mantlui
+       - vault
     when: ( do_wake == 'yes' ) and ( inventory_hostname in groups['role=control'] )
 
   - debug: msg="Now run ansible-playbook -e @security.yml mantl.yml --tags mantlui"  

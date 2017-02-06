@@ -32,9 +32,9 @@
     name: consul
     groups: tls
 
-- set_fact:
-   private_ipv4: "{{ hostvars[inventory_hostname]['ec2_private_ip_address'] }}"
-   when: provider == 'aws'
+# - set_fact:
+#    private_ipv4: "{{ hostvars[inventory_hostname]['ec2_private_ip_address'] }}"
+#    when: provider == 'aws'
 
 - name: configure consul
   sudo: yes
@@ -98,7 +98,7 @@
 - name: create secure acl
   sudo: yes
   run_once: yes
-  command: consul-cli acl-update --token={{ consul_acl_master_token }} --name="Mantl Secure Token" --rule='key:secure:write' --rule='service::write' {{ consul_acl_secure_token }}
+  command: consul-cli acl update --token={{ consul_acl_master_token }} --name="Mantl Secure Token" --rule='key:secure:write' --rule='service::write' {{ consul_acl_secure_token }}
   tags:
     - consul
 

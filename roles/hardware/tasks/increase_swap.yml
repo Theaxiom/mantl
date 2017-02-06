@@ -24,16 +24,19 @@
   tags:
     - swap
 
-
 - name: make swap mount
   shell: mkswap "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MB.swap"
   tags:
     - swap
+  args:
+    creates: "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MB.swap"
 
 - name: turn on swapping
   shell: swapon "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MB.swap"
   tags:
     - swap
+  args:
+    creates: "{{ swap_dir }}/{{hardware_swap_size_in_mb}}MB.swap"
     
 - name: make swap persistent
   lineinfile:

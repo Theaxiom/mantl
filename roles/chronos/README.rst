@@ -91,7 +91,7 @@ to disable the existing Chronos install.
 
 .. code-block:: shell
 
-   ansible 'role=control' -s -m shell -a 'consul-cli service-deregister chronos'
+   ansible 'role=control' -s -m shell -a 'consul-cli service deregister chronos'
    ansible 'role=control' -s -m shell -a 'rm /etc/consul/chronos.json'
    ansible 'role=control' -s -m service -a 'name=chronos enabled=no state=stopped'
 

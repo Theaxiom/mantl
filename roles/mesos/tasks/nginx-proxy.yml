@@ -23,7 +23,7 @@
 - name: configure nginx
   run_once: yes
   sudo: yes
-  command: consul-cli kv-write --token={{ consul_acl_secure_token }} "{{ item.path }}" "{{ item.value }}"
+  command: consul-cli kv write --token={{ consul_acl_secure_token }} "{{ item.path }}" "{{ item.value }}"
   with_items:
     - path: secure/mesos/nginx/do_ssl
       value: "{{ do_mesos_ssl }}"

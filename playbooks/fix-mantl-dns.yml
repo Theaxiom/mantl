@@ -3,7 +3,7 @@
   tasks:
     - name: deregister consul services
       sudo: yes
-      shell: consul-cli service-deregister "{{item}}"
+      shell: consul-cli service deregister "{{item}}"
       with_items:
         - zookeeper
         - marathon

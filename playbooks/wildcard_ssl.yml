@@ -30,6 +30,7 @@
   with_items:
     - /private_certs
     - /public_certs
+    - /cacerts
 
 - name: copy CA cert into place
   sudo: yes
@@ -40,6 +41,8 @@
   with_items:
     - src: ../ssl/cacert.pem
       dest: /public_certs/ca.cert.pem
+    - src: ../ssl/cacert.pem
+      dest: /cacerts/ca.cert.pem
 
 - name: copy container keys and certs into place
   sudo: yes
@@ -49,56 +52,7 @@
       dest: /public_certs/container.cert.pem
     - src: /etc/pki/mantl/key
       dest: /private_certs/container.key.pem
-
-
-- name: copy public wildcard certs to /etc/pki/CA/
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/pki/CA/{{ item | basename }}"
-    owner: root
-    mode: 0644
-  with_fileglob:
-    - "{{ wildcard_certs_dir }}/public_certs/*"
-
-- name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/pki/ca-trust/source/anchors/{{ item | basename }}"
-    owner: root
-    mode: 0644
-  with_fileglob:
-    - "{{ wildcard_certs_dir }}/public_certs/*"
-
-- name: copy wildcard private keys to /private_certs
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/private_certs/{{ item | basename }}"
-    owner: root
-    mode: 0400
-  with_fileglob:
-    - "{{ wildcard_certs_dir }}/private_certs/*"
-
-- name: on edge nodes make traefik owner of /private_certs
-  sudo: yes
-  file:
-    state: file
-    dest: "{{ item }}"
-    owner: traefik
-    mode: 0400
-  with_fileglob:
-    - "/private_certs/*"
-  when: inventory_hostname in groups['role=edge']
-
-- name: copy wildcard private keys to /etc/pki/tls/private
-  sudo: yes
-  file: 
-    dest: /root/keyfile
-    mode: 0600
-    content: fluffyPizza
-  when: inventory_hostname in groups['role=worker']
+  when: no_use_vault_certs is defined
 
 - name: copy container keys and certs into place
   sudo: yes
@@ -113,6 +67,7 @@
       dest: /public_certs/container.cert.pem
     - src: ../ssl/private/host.key.pem
       dest: /private_certs/container.key.pem
+  when: no_use_vault_certs is defined
 
 ###########################################
 # move 3rd party wildcard certs into place
@@ -131,7 +86,16 @@
   tags:
     - update_certs
 
-# This step may be un-necessary.  Determine minimal required.
+- name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
+  sudo: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/pki/ca-trust/source/anchors/{{ item | basename }}"
+    owner: root
+    mode: 0644
+  with_fileglob:
+    - "{{ wildcard_certs_dir }}/public_certs/*"
+
 - name: copy public wildcard certs to /etc/pki/CA/
   sudo: yes
   copy:
@@ -151,37 +115,7 @@
     mode: 0400
   with_fileglob:
     - "{{ wildcard_certs_dir }}/private_certs/*"
-
-- name: on edge nodes make traefik owner of /private_certs
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/pki/tls/private/{{ item | basename }}"
-
-- name: copy public wildcard certs to truststore /etc/pki/ca-trust/source/anchors/
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-    dest: "/etc/pki/ca-trust/source/anchors/{{ item | basename }}"
-    owner: root
-    mode: 0644
-  with_fileglob:
-    - "{{ wildcard_certs_dir }}/public_certs/*"
-
-- name: copy wildcard private keys to /private_certs
-  sudo: yes
-  copy:
-    src: "{{ item }}"
-      file:
-    state: file
-    dest: "{{ item }}"
-    owner: traefik
-    mode: 0400
-  with_fileglob:
-    - "{{ wildcard_certs_dir }}/private_certs/*"
-  tags:
-    - update_certs
-
+    
 # per david, apple doesn't let us use 2 certs.
 # - name: rename aps_development pem files
 #   shell: mv "{{ item.src }}" "{{ item.dest }}"

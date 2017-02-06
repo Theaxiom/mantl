@@ -13,7 +13,7 @@
 - name: check if kafka-manager service is registered
   sudo: yes
   run_once: yes
-  shell: "consul-cli catalog-service {{ kafka_manager_service_name }} | jq '.|length'"
+  shell: "consul-cli catalog service {{ kafka_manager_service_name }} | jq '.|length'"
   register: kafka_manager_service_count
   changed_when: false
   tags:
@@ -22,7 +22,7 @@
 - name: install kafka-manager
   sudo: yes
   run_once: yes
-  command: consul-cli kv-write --token={{ consul_acl_mantl_api_token }} mantl-install/apps/kafka-manager @/etc/marathon/apps/kafka-manager.json
+  command: consul-cli kv write --token={{ consul_acl_mantl_api_token }} mantl-install/apps/kafka-manager @/etc/marathon/apps/kafka-manager.json
   when: kafka_manager_service_count.stdout|int == 0
   tags:
     - kafka

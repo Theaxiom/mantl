@@ -2,17 +2,35 @@
 
 # https://help.sumologic.com/Apps/Linux_Performance_App/Collect_Logs_for_the_Linux_Performance_App
 # http://sebastien.godard.pagesperso-orange.fr/man_sadf.html
-- name: install sysstat
+- name: install sysstat RedHat
   yum:
     name: sysstat
   tags: 
    - sumologic
    - sumo-perf
+  when: ansible_os_family == "RedHat"
+
+- name: install sysstat Debian
+  apt :
+    name: sysstat
+  tags: 
+   - sumologic
+   - sumo-perf
+  when: ansible_os_family == "Debian"
 
 - name: template cron for sysstat
   template:
     src: etc_cron.d_sysstat
     dest: /etc/cron.d/sysstat
   tags: 
+    - sumologic
+    - sumo-perf
+
+- name: restart sysstat
+  service:
+    name: sysstat
+    state: restarted
+  when: ansible_os_family == "Debian"
+  tags:
     - sumologic
     - sumo-perf

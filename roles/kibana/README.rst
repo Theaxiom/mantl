@@ -56,7 +56,7 @@ Kibana:
 
 .. code-block:: shell
 
-   ansible 'role=control' -s -m shell -a 'consul-cli service-deregister kibana'
+   ansible 'role=control' -s -m shell -a 'consul-cli service deregister kibana'
    ansible 'role=control' -s -m shell -a 'rm /etc/consul/kibana.json'
    ansible 'role=control' -s -m service -a 'name=kibana enabled=no state=stopped'
 

@@ -30,8 +30,6 @@
     - etcd
     - dnsmasq
     - wgregorian.sumocollector
-    - mongodb
-    - hardware
 # ROLES - after provisioning the software that's common to all hosts, we do
 # specialized hosts. This configuration has two major groups: control nodes and
 # worker nodes. We provision the worker nodes first so that we don't create any
@@ -43,7 +41,7 @@
 # run software that the Mesos leader shedules. It also forwards traffic to
 # globally known ports configured through Marathon.
 - hosts: role=worker
-  # role=worker hosts are a subset of "all". Since we already gathered facts on
+  # role=worker hosts are a su`bset of "all". Since we already gathered facts on
   # all servers, we can skip it here to speed up the deployment.
   gather_facts: no
   vars:
@@ -51,6 +49,9 @@
     zookeeper_server_group: role=control
   roles:
     - mesos
+    - hardware
+    - mongodb
+
 
 # the control nodes are necessarily more complex than the worker nodes, and have
 # ZooKeeper, Mesos, and Marathon leaders. In addition, they control Vault to

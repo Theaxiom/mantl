@@ -1,5 +1,14 @@
 # This rules executed only when debug_storage_setup == true
 
+- name: ensure systemd/system folder exists
+  sudo: yes
+  file: 
+    state: directory
+    dest: /usr/lib/systemd/system
+    mode: 0644
+  tags:
+    - lvm
+    
 - name: install partitioner script
   sudo: yes
   copy:

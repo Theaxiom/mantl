@@ -24,7 +24,7 @@
 - name: create consul acl for marathon
   sudo: yes
   run_once: yes
-  command: consul-cli acl-update --token={{ consul_acl_master_token }} --name="Marathon ACL Token" --rule='key:marathon:write' {{ consul_acl_marathon_token }}
+  command: consul-cli acl update --token={{ consul_acl_master_token }} --name="Marathon ACL Token" --rule='key:marathon:write' {{ consul_acl_marathon_token }}
   tags:
     - marathon
 
@@ -73,7 +73,7 @@
 
 - name: write iptables configuration
   run_once: true
-  command: consul-cli kv-write --token={{ consul_acl_secure_token }} secure/marathon/ip_tables {{ do_marathon_iptables }}
+  command: consul-cli kv write --token={{ consul_acl_secure_token }} secure/marathon/ip_tables {{ do_marathon_iptables }}
   tags:
     - marathon
 

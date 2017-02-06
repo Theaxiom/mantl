@@ -4,9 +4,7 @@
 [Unit]
 Description=sumologic-collector
 After=docker.service
-After=consul.service
 Requires=docker.service
-Wants=consul.service
 
 [Service]
 Restart=on-failure

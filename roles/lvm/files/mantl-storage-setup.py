@@ -229,7 +229,7 @@ def process_fs(sec, params):
             print "--> Not writing {}, it already exists".format(unitfile)
         check_call(["systemctl", "enable", unit])
         check_call(["systemctl", "daemon-reload"])
-        check_call(["systemctl", "start"])
+        check_call(["systemctl", "start", unit])
         post_mount_cmds = optional(params.get, sec, "post_mount_cmds", "")  
         if post_mount_cmds:
             for cmd in post_mount_cmds.split(';;'):

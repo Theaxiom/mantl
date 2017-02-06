@@ -69,6 +69,7 @@
 #     - certificates
 
 - name: set unique_subject = no
+  sudo: yes
   copy:
     dest: "/etc/pki/CA/index.txt.attr"
     content: "unique_subject = no"
@@ -92,6 +93,7 @@
     --destination "{{ destination }}"
   args:
     creates: "{{ destination }}/{{ prefix }}{% if prefix != '' %}.{% endif %}key"
+    chdir: "/etc/pki/ca-trust/source/"
   tags:
     - certificates
 

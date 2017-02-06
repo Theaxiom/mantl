@@ -11,3 +11,15 @@ debug_storage_setup: False
 
 mongodb_lvm_physical_device: /dev/xvdg
 mongodb_lvm_volume_group_name: mongodb
+
+mysql_lvm_physical_device: >
+  {%- if provider is defined -%}
+  {%- if provider == 'gce' -%}/dev/disk/by-id/google-lvm
+  {%- elif provider == 'aws' -%}/dev/xvdd
+  {%- elif provider == 'openstack' -%}/dev/vdd
+  {%- elif provider == 'vmware' -%}/dev/sdd
+  {%- endif -%}{%- endif -%}
+
+mysql_lvm_volume_group_name: mysql
+
+docker_lvm_group: True

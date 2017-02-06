@@ -9,6 +9,15 @@
     - common
     - fail2ban
 
+- name: ensure fail2ban run dir exists (bug deletes it)
+  file:
+    dest: /var/run/fail2ban
+    state: directory
+  tags:
+    - bootstrap
+    - common
+    - fail2ban
+
 - name: enable fail2ban jails
   sudo: yes
   copy:
