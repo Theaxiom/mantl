@@ -15,6 +15,7 @@ ssl/kubernetes
 /*.tf
 **/*.tfstate*
 **/.terraform
+aws.tf
 
 # downloaded by playbook
 addons/library/

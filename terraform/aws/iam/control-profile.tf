@@ -1,4 +1,4 @@
-variable "short_name" {default = "mantl"}
+#variable "short_name" {default = "mantl"}
 
 resource "aws_iam_instance_profile" "control_profile" {
   name = "${var.short_name}-control-profile"

@@ -1,8 +1,27 @@
 ![image](./docs/_static/mantl-logo.png)
 
-# Overview
+# Customized check list
 
-[![Join the chat at https://gitter.im/CiscoCloud/mantl](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/CiscoCloud/mantl?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+- add debian support
+- add spot instance support
+- simplify unnecessary components
+
+# Setup
+
+- create a S3 bucket to store the development configurations, including terraform state files
+- export the following variables to work with multiple AWS credentials
+
+```
+AWS_ACCESS_KEY_ID: YOUR_AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY: YOUR_AWS_SECRET_ACCESS_KEY
+AWS_DEFAULT_REGION: us-east-1
+``` 
+
+- or set up the credintial at `~/.aws/credentials` with [default]
+
+- http://docs.mantl.io/en/latest/getting_started/aws.html 
+
+# Overview
 
 Mantl is a modern, batteries included platform for rapidly deploying globally
 distributed services

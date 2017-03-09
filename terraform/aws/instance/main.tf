@@ -32,6 +32,7 @@ resource "aws_ebs_volume" "ebs" {
 
 resource "aws_instance" "instance" {
   ami = "${var.source_ami}"
+  availability_zone = "${element(split(",", var.availability_zones), count.index)}"
   instance_type = "${var.ec2_type}"
   count = "${var.count}"
   vpc_security_group_ids = [ "${split(",", var.security_group_ids)}"]
