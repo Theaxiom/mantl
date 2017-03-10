@@ -1,27 +1,57 @@
 ---
-- name: install mantl-dns
+- name: install dnsmasq dependencies
   sudo: yes
   yum:
-    name: "mantl-dns-{{ mantl_dns_version }}"
-    state: installed
-  tags:
+    name: "{{ item }}"
+    state: latest
+  with_items:
     - dnsmasq
-    - bootstrap
-
-- name: remove consul from list of search domains
-  sudo: yes
-  command: sed -i'' 's/consul *//g' /etc/resolv.conf.masq
+    - bind-utils
+    - NetworkManager
   tags:
     - dnsmasq
 
-- name: remove localhost from list of resolvers
-  sudo: yes
-  lineinfile:
-    dest: /etc/resolv.conf.masq
-    regexp: nameserver 127.0.0.1
-    state: absent
+- name: ensure customized config directory for dnsmasq
+  become: yes
+  file:
+    path: /etc/dnsmasq.d
+    state: directory
   tags:
     - dnsmasq
+
+- name: setup consul dns config
+  become: yes
+  copy:
+    src: 10-consul
+    dest: /etc/dnsmasq.d/
+    mode: 0755
+  tags:
+    - dnsmasq
+
+- name: setup consul resolv.conf
+  become: yes
+  copy:
+    src: resolv.conf
+    dest: /etc/resolv.conf.mantl-dns
+    mode: 0755
+  tags:
+    - dnsmasq
+
+- name: setup mantl-dns script
+  become: yes
+  copy:
+    src: mantl-dns.sh
+    dest: /opt/bin/mantl-dns.sh
+    mode: 0755
+  tags:
+    - dnsmasq
+
+- name: run mantl-dns script
+  become: yes
+  command: sh /opt/bin/mantl-dns.sh 
+  tags:
+    - dnsmasq
+
 
 - name: configure dnsmasq for Kubernetes
   sudo: yes

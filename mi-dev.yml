@@ -2,7 +2,7 @@
 # CHECK SECURITY - when customizing you should leave this in. If you
 # take it out and forget to specify security.yml, security could be turned off
 # on components in your cluster!
-- include: "{{ playbook_dir }}/playbooks/check-requirements.yml"
+#- include: "{{ playbook_dir }}/playbooks/check-requirements.yml"
 
 # BASICS - we need every node in the cluster to have common software running to
 # increase stability and enable service discovery. You can look at the
@@ -18,7 +18,7 @@
 
     consul_servers_group: role=control
   roles:
-    - common
+#    - common
 #    - certificates
 #    - lvm
 #    - docker
@@ -27,7 +27,7 @@
 #    - nginx
 #    - consul
 #    - etcd
-#    - dnsmasq
+    - dnsmasq
 
 # ROLES - after provisioning the software that's common to all hosts, we do
 # specialized hosts. There are 4 built-in roles: control, workers (mesos),

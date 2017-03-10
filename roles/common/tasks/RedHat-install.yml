@@ -40,6 +40,7 @@
     - chrony
     - smlr
     - zookeepercli
+    - NetworkManager
   tags:
     - bootstrap
 
@@ -58,6 +59,7 @@
     state: stopped
   register: command_result
   failed_when: "command_result|failed and 'No such file or directory' not in command_result.msg"
+  ignore_errors: yes
 
 - name: install pip
   sudo: yes

@@ -86,3 +86,10 @@
 
 - include: Debian-fail2ban.yml
   when: ansible_os_family == 'Debian'
+
+- name: ensure customized directory
+  become: yes
+  file:
+    path: /opt/bin
+    state: directory
+    mode: 0755
