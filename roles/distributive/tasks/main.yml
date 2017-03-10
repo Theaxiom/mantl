@@ -24,6 +24,7 @@
   with_items:
     - "{{ distributive_package }}"
     - "distributive-{{ current_role }}-{{ checklist_versions[current_role] }}"
+  when: ansible_os_family == 'RedHat'
 
 - name: create consul configuration directory
   become: yes

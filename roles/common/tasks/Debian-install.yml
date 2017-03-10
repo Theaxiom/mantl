@@ -1,0 +1,55 @@
+- name: install system utilities
+  sudo: yes
+  apt:
+    name: "{{ item }}"
+    state: latest
+    update_cache: yes
+    cache_valid_time: 3600
+  with_items:
+    - build-essential 
+    - python-dev 
+    - bridge-utils 
+    - netcat
+    - unzip
+    - jq
+    - curl
+    - git
+    - openjdk-8-jdk
+    - chrony
+    - libzmq1
+  tags:
+    - bootstrap
+
+- name: download zookeepercli
+  become: yes
+  get_url:
+    url: "https://github.com/outbrain/zookeepercli/releases/download/v{{ zookeepercli_version }}/zookeepercli_{{ zookeepercli_version }}_amd64.deb"
+    dest: "/opt/zookeepercli_{{ zookeepercli_version }}_amd64.deb"
+    mode: 0644
+  tags:
+    - bootstrap
+
+- name: install zookeepercli
+  become: yes
+  apt:
+    deb: "/opt/zookeepercli_{{ zookeepercli_version }}_amd64.deb"
+  tags:
+    - bootstrap
+
+
+- name: enable chrony
+  sudo: yes
+  service:
+    name: chrony
+    enabled: yes
+    state: started
+
+- name: disable firewalld
+  sudo: yes
+  shell: "ufw disable"
+
+- name: install pip
+  sudo: yes
+  apt:
+    name: python-pip
+    state: latest

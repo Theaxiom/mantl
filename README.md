@@ -18,8 +18,16 @@ AWS_DEFAULT_REGION: us-east-1
 ``` 
 
 - or set up the credintial at `~/.aws/credentials` with [default]
+- `terraform remote config -backend=s3 -backend-config="bucket=mybucketname" -backend-config="key=nam_of_key_file"`
+- store statefile remotely: [here](http://blog.mattiasgees.be/2015/07/29/terraform-remote-state/)
 
 - http://docs.mantl.io/en/latest/getting_started/aws.html 
+
+- `terraform get`
+- `terraform plan`
+- `terraform apply`
+- `./security-setup`
+- `ansible-playbook  --extra-vars=@security.yml mi-dev.yml --private-key /home/vagrant/.ssh/<PRIVATE_KEY> -e 'ansible_python_interpreter=/usr/bin/python3'`
 
 # Overview
 

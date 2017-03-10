@@ -5,6 +5,7 @@
     dest: "/etc/yum.repos.d/{{ item }}"
   with_items:
     - ciscocloud-rpm.repo
+  when: ansible_os_family == 'RedHat'
   tags:
     - bootstrap
 
@@ -15,5 +16,6 @@
     dest: "/etc/yum.repos.d/{{ item }}"
   with_items:
     - asteris-mantl-rpm.repo
+  when: ansible_os_family == 'RedHat'
   tags:
     - bootstrap
