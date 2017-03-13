@@ -9,6 +9,7 @@
 # documentation for each of these components in their README file in the
 # `roles/` directory, or by checking the online documentation at
 # docs.mantl.io.
+
 - hosts: all
   vars:
     # consul_acl_datacenter should be set to the datacenter you want to control
