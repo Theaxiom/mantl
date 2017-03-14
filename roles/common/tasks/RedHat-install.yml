@@ -40,7 +40,7 @@
     - chrony
     - smlr
     - zookeepercli
-    - NetworkManager
+    - python-pip
   tags:
     - bootstrap
 

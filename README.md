@@ -2,9 +2,12 @@
 
 # Customized check list
 
-- add debian support
+- add debian support (currently block by mantl dependencies packages that are in rpm)
 - add spot instance support
 - simplify unnecessary components
+- upgrade mesos version to 1.x
+- upgrade marathon version to 1.3.x
+- upgrade Kubernetes
 
 # Setup
 
@@ -27,7 +30,7 @@ AWS_DEFAULT_REGION: us-east-1
 - `terraform plan`
 - `terraform apply`
 - `./security-setup`
-- `ansible-playbook  --extra-vars=@security.yml mi-dev.yml --private-key /home/vagrant/.ssh/<PRIVATE_KEY> -e 'ansible_python_interpreter=/usr/bin/python3'`
+- For python3 interpreter: `ansible-playbook  --extra-vars=@security.yml mi-dev.yml --private-key /home/vagrant/.ssh/<PRIVATE_KEY> -e 'ansible_python_interpreter=/usr/bin/python3'`
 
 # Overview
 
