@@ -20,12 +20,10 @@ AWS_SECRET_ACCESS_KEY: YOUR_AWS_SECRET_ACCESS_KEY
 AWS_DEFAULT_REGION: us-east-1
 ``` 
 
-- or set up the credintial at `~/.aws/credentials` with [default]
+- or set up the credential at `~/.aws/credentials` with [default]
 - `terraform remote config -backend=s3 -backend-config="bucket=mybucketname" -backend-config="key=nam_of_key_file"`
 - store statefile remotely: [here](http://blog.mattiasgees.be/2015/07/29/terraform-remote-state/)
-
 - http://docs.mantl.io/en/latest/getting_started/aws.html 
-
 - `terraform get`
 - `terraform plan`
 - `terraform apply`

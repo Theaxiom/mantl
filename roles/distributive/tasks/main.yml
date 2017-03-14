@@ -45,3 +45,15 @@
   tags:
     - consul
     - distributive
+
+# Customized check list
+- name: replace with new distributive-common.json
+  become: yes
+  copy:
+    src: distributive-common.json
+    dest: /etc/distributive.d/distributive-common.json
+    mode: 0644
+  tags:
+    - bootstrap
+    - distributive
+
