@@ -1,3 +1,6 @@
+# Could you create some PR's for the upstream project?
+Hey, great job on your updates to Mantl! Mantl is now a stand-alone FOSS project and I am one of the core maintainers. Would you be interested in helping us to get the engines started again by pushing your changes back upstream through PR's? I see you have done a great deal of work. It would be greatly appreciated, thanks! We have a Mattermost channel setup here: https://mattermost.dynamictivity.com/signup_user_complete/?id=pjksr6h977n4zxxyto3ojp8twa
+
 ![image](./docs/_static/mantl-logo.png)
 
 # Overview
